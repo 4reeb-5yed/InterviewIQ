@@ -1,4 +1,4 @@
-// Mirrors the backend domain models (docs/DATABASE.md section 4, API_CONTRACTS.md).
+// Mirrors the backend domain models (docs/DATABASE.md, API_CONTRACTS.md).
 // All fields are camelCase to match the backend's aliased JSON output.
 
 export interface Skills {
@@ -63,6 +63,109 @@ export interface InterviewQuestion {
   likelihoodScore: number;
 }
 
+// --- Career Intelligence Report (resume-only, always present) ----------------
+
+export interface EvidenceScore {
+  score: number;
+  rating: string;
+  reasoning: string;
+  evidence: string[];
+}
+
+export interface ATSIssue {
+  issue: string;
+  severity: "high" | "medium" | "low";
+  reasoning: string;
+  fix: string;
+}
+
+export interface ATSReadiness {
+  score: number;
+  rating: string;
+  reasoning: string;
+  evidence: string[];
+  issues: ATSIssue[];
+}
+
+export interface StrengthsWeaknesses {
+  strengths: string[];
+  weaknesses: string[];
+  reasoning: string;
+}
+
+export interface CareerLevel {
+  level: string;
+  reasoning: string;
+  evidence: string[];
+}
+
+export interface RoleFit {
+  role: string;
+  fitScore: number;
+  reasoning: string;
+}
+
+export interface GapItem {
+  area: string;
+  action: string;
+  reasoning: string;
+}
+
+export interface GapToNextLevel {
+  targetLevel: string;
+  reasoning: string;
+  gaps: GapItem[];
+}
+
+export interface ROIImprovement {
+  change: string;
+  impact: "high" | "medium" | "low";
+  reasoning: string;
+  exampleBefore?: string | null;
+  exampleAfter?: string | null;
+}
+
+export interface RoadmapStep {
+  timeframe: string;
+  focus: string;
+  actions: string[];
+}
+
+export interface MissingSection {
+  section: string;
+  importance: "critical" | "recommended" | "optional";
+  reasoning: string;
+}
+
+export interface HiddenStrength {
+  strength: string;
+  evidence: string;
+  howToLeverage: string;
+}
+
+export interface CareerReport {
+  atsReadiness: ATSReadiness;
+  resumeQuality: EvidenceScore;
+  strengthsWeaknesses: StrengthsWeaknesses;
+  careerLevel: CareerLevel;
+  roleMatches: RoleFit[];
+  employability: EvidenceScore;
+  interviewProbability: EvidenceScore;
+  gapToNextLevel: GapToNextLevel;
+  roiImprovements: ROIImprovement[];
+  careerRoadmap: RoadmapStep[];
+  missingSections: MissingSection[];
+  hiddenStrengths: HiddenStrength[];
+  overallSummary: string;
+}
+
+export interface JobMatch {
+  readinessScore: number | null;
+  summary: string | null;
+  skillGaps: SkillGap[];
+  predictedQuestions: InterviewQuestion[];
+}
+
 // --- Endpoint payloads -------------------------------------------------------
 
 export interface ResumeUploadResponse {
@@ -80,14 +183,14 @@ export interface RunAnalysisResponse {
 }
 
 export type TaskState = "pending" | "running" | "completed" | "failed";
+export type AnalysisMode = "resume_only" | "job_match";
 
-/** The completed-analysis payload carried in a task result and the analysis GET. */
+/** Completed-analysis payload carried in a task result and the analysis GET. */
 export interface AnalysisResult {
   analysisId: string;
-  readinessScore: number | null;
-  skillGaps: SkillGap[];
-  predictedQuestions: InterviewQuestion[];
-  summary: string | null;
+  mode: AnalysisMode;
+  careerReport: CareerReport | null;
+  jobMatch: JobMatch | null;
 }
 
 export interface TaskStatus {
@@ -99,6 +202,6 @@ export interface TaskStatus {
 
 export interface AnalysisResultResponse extends AnalysisResult {
   resumeId: string;
-  jobId: string;
+  jobId: string | null;
   createdAt: string;
 }

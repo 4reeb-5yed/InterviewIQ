@@ -7,7 +7,8 @@ import type {
 
 export interface RunAnalysisInput {
   resumeId: string;
-  jobId: string;
+  /** Optional: omit for a resume-only Career Intelligence Report. */
+  jobId?: string;
 }
 
 export function runAnalysis(input: RunAnalysisInput): Promise<RunAnalysisResponse> {

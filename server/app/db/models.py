@@ -56,7 +56,12 @@ class Job(Base):
 
 
 class Analysis(Base):
-    """Result of comparing a resume against a job; lifecycle tracked via status."""
+    """Result of analyzing a resume (optionally against a job); status-tracked.
+
+    ``job_id`` is nullable: a resume-only analysis stores the career intelligence
+    report in ``career_report`` with the job-match columns left null. When a job
+    is provided, both the career report and the job-match columns are populated.
+    """
 
     __tablename__ = "analyses"
 
@@ -66,12 +71,13 @@ class Analysis(Base):
     resume_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("resumes.id"), nullable=False
     )
-    job_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False
+    job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=True
     )
     readiness_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     skill_gaps: Mapped[list | None] = mapped_column(JSONB, nullable=True)
     predicted_questions: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    career_report: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, default="pending", server_default="pending"

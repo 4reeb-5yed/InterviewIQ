@@ -1,10 +1,13 @@
 """Analysis business logic: cache -> load -> run graph -> persist -> cache.
 
+The Job Description is optional. The pipeline always produces a Career
+Intelligence Report (resume-only); when a job is provided it additionally
+produces the job-match analysis. This is one extended pipeline, not a separate
+workflow.
+
 Unlike the resume/scraper services (which use a request-scoped session), this
 service is injected with a session *factory* because the pipeline runs in a
-FastAPI BackgroundTask that outlives the request. It opens short-lived sessions
-and builds repositories from them; repositories remain the only code issuing
-SQLAlchemy queries.
+FastAPI BackgroundTask that outlives the request.
 """
 
 from __future__ import annotations
@@ -25,7 +28,7 @@ from app.db.models import Analysis
 from app.features.analysis.repository import AnalysisRepository
 from app.features.resume.repository import ResumeRepository
 from app.features.scraper.repository import JobRepository
-from app.schemas.domain import InterviewQuestion, JobData, ResumeData, SkillGap
+from app.schemas.domain import CareerReport, InterviewQuestion, JobData, ResumeData, SkillGap
 
 
 class AnalysisService:
@@ -49,13 +52,13 @@ class AnalysisService:
         self._log = logger
 
     # --- request-scoped helpers ---------------------------------------------
-    async def ensure_inputs_exist(self, resume_id: UUID, job_id: UUID) -> None:
+    async def ensure_inputs_exist(self, resume_id: UUID, job_id: UUID | None) -> None:
         async with self._session_factory() as session:
             resume = await ResumeRepository(session).get_by_id(resume_id)
-            job = await JobRepository(session).get_by_id(job_id)
+            job = await JobRepository(session).get_by_id(job_id) if job_id else None
         if resume is None:
             raise ResourceNotFoundError(f"Unknown resumeId: {resume_id}")
-        if job is None:
+        if job_id is not None and job is None:
             raise ResourceNotFoundError(f"Unknown jobId: {job_id}")
 
     async def create_task(self, task_id: UUID) -> None:
@@ -69,7 +72,7 @@ class AnalysisService:
             return await AnalysisRepository(session).get_by_id(analysis_id)
 
     # --- background execution -----------------------------------------------
-    async def run_and_store(self, task_id: UUID, resume_id: UUID, job_id: UUID) -> None:
+    async def run_and_store(self, task_id: UUID, resume_id: UUID, job_id: UUID | None) -> None:
         await self._tasks.set_running(task_id)
         try:
             result = await self._execute(resume_id, job_id)
@@ -77,25 +80,26 @@ class AnalysisService:
         except ResourceNotFoundError as exc:
             await self._tasks.set_failed(task_id, f"NOT_FOUND: {exc}")
         except Exception as exc:  # noqa: BLE001 - record any pipeline failure on the task
-            self._log.error("analysis_failed", error=str(exc))
+            self._log.error("analysis_failed", error=str(exc), exc_info=True)
             await self._tasks.set_failed(task_id, f"ANALYSIS_FAILED: {exc}")
 
-    async def _execute(self, resume_id: UUID, job_id: UUID) -> dict:
-        cache_key = f"analysis:{resume_id}:{job_id}"
+    async def _execute(self, resume_id: UUID, job_id: UUID | None) -> dict:
+        cache_key = f"analysis:{resume_id}:{job_id or 'none'}"
         cached = await self._cache.get(cache_key)
         if cached is not None:
             return cached
 
         async with self._session_factory() as session:
             resume = await ResumeRepository(session).get_by_id(resume_id)
-            job = await JobRepository(session).get_by_id(job_id)
-            if resume is None or job is None:
-                raise ResourceNotFoundError("resume or job not found")
+            if resume is None:
+                raise ResourceNotFoundError(f"Unknown resumeId: {resume_id}")
+            job = await JobRepository(session).get_by_id(job_id) if job_id else None
+            if job_id is not None and job is None:
+                raise ResourceNotFoundError(f"Unknown jobId: {job_id}")
 
             analysis_repo = AnalysisRepository(session)
 
-            # Reuse a prior completed analysis for the same pair if present.
-            existing = await analysis_repo.find_by_pair(resume_id, job_id)
+            existing = await analysis_repo.find_existing(resume_id, job_id)
             if existing is not None:
                 result = self._result_dict(existing)
                 await self._cache.set(cache_key, result, self._settings.cache_analysis_ttl_seconds)
@@ -104,9 +108,10 @@ class AnalysisService:
             analysis = await analysis_repo.create_pending(resume_id, job_id)
             state: AgentState = {
                 "resume_text": resume.raw_text,
-                "job_description": job.raw_text,
+                "job_description": job.raw_text if job else "",
                 "resume_data": ResumeData.model_validate(resume.parsed_data),
-                "job_data": JobData.model_validate(job.parsed_data),
+                "job_data": JobData.model_validate(job.parsed_data) if job else None,
+                "career_report": None,
                 "skill_gaps": None,
                 "readiness_score": None,
                 "summary": None,
@@ -115,29 +120,51 @@ class AnalysisService:
             }
             final: dict = await self._graph.ainvoke(state)
 
+            career_report: CareerReport | None = final.get("career_report")
+            has_job = job is not None
             skill_gaps: list[SkillGap] = final.get("skill_gaps") or []
             questions: list[InterviewQuestion] = final.get("predicted_questions") or []
+
             updated = await analysis_repo.update_result(
                 analysis.id,
-                readiness_score=final.get("readiness_score"),
-                skill_gaps=[g.model_dump(mode="json", by_alias=True) for g in skill_gaps],
-                predicted_questions=[q.model_dump(mode="json", by_alias=True) for q in questions],
-                summary=final.get("summary"),
+                career_report=(
+                    career_report.model_dump(mode="json", by_alias=True) if career_report else None
+                ),
+                readiness_score=final.get("readiness_score") if has_job else None,
+                skill_gaps=(
+                    [g.model_dump(mode="json", by_alias=True) for g in skill_gaps]
+                    if has_job
+                    else None
+                ),
+                predicted_questions=(
+                    [q.model_dump(mode="json", by_alias=True) for q in questions]
+                    if has_job
+                    else None
+                ),
+                summary=final.get("summary") if has_job else None,
                 status="completed",
                 error=None,
             )
             result = self._result_dict(updated or analysis)
 
         await self._cache.set(cache_key, result, self._settings.cache_analysis_ttl_seconds)
-        self._log.info("analysis_completed", analysis_id=result["analysisId"])
+        self._log.info("analysis_completed", analysis_id=result["analysisId"], mode=result["mode"])
         return result
 
     @staticmethod
     def _result_dict(analysis: Analysis) -> dict:
-        return {
+        mode = "job_match" if analysis.job_id is not None else "resume_only"
+        result: dict = {
             "analysisId": str(analysis.id),
-            "readinessScore": analysis.readiness_score,
-            "skillGaps": analysis.skill_gaps or [],
-            "predictedQuestions": analysis.predicted_questions or [],
-            "summary": analysis.summary,
+            "mode": mode,
+            "careerReport": analysis.career_report,
+            "jobMatch": None,
         }
+        if analysis.job_id is not None:
+            result["jobMatch"] = {
+                "readinessScore": analysis.readiness_score,
+                "summary": analysis.summary,
+                "skillGaps": analysis.skill_gaps or [],
+                "predictedQuestions": analysis.predicted_questions or [],
+            }
+        return result

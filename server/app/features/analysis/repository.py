@@ -16,7 +16,7 @@ class AnalysisRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create_pending(self, resume_id: UUID, job_id: UUID) -> Analysis:
+    async def create_pending(self, resume_id: UUID, job_id: UUID | None) -> Analysis:
         analysis = Analysis(resume_id=resume_id, job_id=job_id, status="pending")
         self._session.add(analysis)
         await self._session.commit()
@@ -27,6 +27,7 @@ class AnalysisRepository:
         self,
         analysis_id: UUID,
         *,
+        career_report: dict | None,
         readiness_score: int | None,
         skill_gaps: list[dict] | None,
         predicted_questions: list[dict] | None,
@@ -37,6 +38,7 @@ class AnalysisRepository:
         analysis = await self._session.get(Analysis, analysis_id)
         if analysis is None:
             return None
+        analysis.career_report = career_report
         analysis.readiness_score = readiness_score
         analysis.skill_gaps = skill_gaps
         analysis.predicted_questions = predicted_questions
@@ -50,16 +52,16 @@ class AnalysisRepository:
     async def get_by_id(self, analysis_id: UUID) -> Analysis | None:
         return await self._session.get(Analysis, analysis_id)
 
-    async def find_by_pair(self, resume_id: UUID, job_id: UUID) -> Analysis | None:
-        stmt = (
-            select(Analysis)
-            .where(
-                Analysis.resume_id == resume_id,
-                Analysis.job_id == job_id,
-                Analysis.status == "completed",
-            )
-            .order_by(Analysis.created_at.desc())
-            .limit(1)
+    async def find_existing(self, resume_id: UUID, job_id: UUID | None) -> Analysis | None:
+        """Latest completed analysis for a resume + (optional) job pair."""
+        stmt = select(Analysis).where(
+            Analysis.resume_id == resume_id,
+            Analysis.status == "completed",
         )
+        if job_id is None:
+            stmt = stmt.where(Analysis.job_id.is_(None))
+        else:
+            stmt = stmt.where(Analysis.job_id == job_id)
+        stmt = stmt.order_by(Analysis.created_at.desc()).limit(1)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()

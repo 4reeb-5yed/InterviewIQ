@@ -1,0 +1,51 @@
+# Local development stack: Postgres + backend. Redis is OPTIONAL and OFF by
+# default (start it with `--profile redis`). The frontend runs via Vite locally.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.yml up        # postgres + server (no redis)
+#   docker compose -f docker/docker-compose.yml --profile redis up   # + redis
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: interviewiq
+      POSTGRES_PASSWORD: interviewiq
+      POSTGRES_DB: interviewiq
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U interviewiq"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: ../server
+      dockerfile: ../docker/server.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://interviewiq:interviewiq@postgres:5432/interviewiq
+      ALLOWED_ORIGINS: http://localhost:5173
+      AI_PROVIDER: anthropic
+      AI_API_KEY: ${AI_API_KEY:-}
+    ports:
+      - "8000:8000"
+    # Apply migrations, then start the API.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  # Optional — only starts with `--profile redis`. The MVP runs without it.
+  redis:
+    image: redis:7-alpine
+    profiles: ["redis"]
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:

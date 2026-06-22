@@ -70,11 +70,13 @@ The app must deploy to the free tier **without code changes** — only environme
 
 | Document | Purpose |
 |----------|---------|
+| [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) | **Actual current repository tree** (entry points, package managers, request flow) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Final architecture + Build/Scaffold/Defer matrix |
+| [docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md) | Provider-agnostic AI: env vars + examples (OpenAI/Gemini/Bedrock/local) |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phase-by-phase implementation roadmap |
 | [docs/DATABASE.md](docs/DATABASE.md) | Schema, ERD, migrations |
 | [docs/API_CONTRACTS.md](docs/API_CONTRACTS.md) | REST contracts (Phase 1 fully specced) |
-| [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | Backend + frontend + root trees, with status legend |
+| [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md) | Planned/target tree, with status legend |
 | [docs/PHASE_1_PLAN.md](docs/PHASE_1_PLAN.md) | Block-level Phase 1 plan (0–12) |
 | [docs/TASKS.md](docs/TASKS.md) | Smallest executable tasks (T01–T50) with deps + acceptance criteria |
 | [docs/PHASE1_CHECKLIST.md](docs/PHASE1_CHECKLIST.md) | Stage-by-stage build order, critical path, blockers |

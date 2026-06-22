@@ -1,0 +1,17 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+
+import { AppShell } from "./components/layout/AppShell";
+import { AnalysisPage } from "./features/analysis/AnalysisPage";
+import { UploadPage } from "./features/upload/UploadPage";
+
+export default function App() {
+  return (
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<UploadPage />} />
+        <Route path="/analysis/:taskId" element={<AnalysisPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
+  );
+}

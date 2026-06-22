@@ -1,6 +1,8 @@
 # InterviewIQ — Project Structure
 
-> The **actual** repository layout as currently implemented (Phase 1 + multi-provider AI + optional-JD Career Intelligence). For the original planned/target layout with `[MVP]/[stub]/[defer]` tags, see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
+> The **actual** repository layout as currently implemented on `feature/analysis-quality-ux`
+> (Phase 1 + multi-provider AI + optional-JD evidence-driven Career Intelligence + UI overhaul).
+> For the original planned tree with `[MVP]/[stub]/[defer]` tags, see [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md).
 
 ```
 InterviewIQ/
@@ -8,136 +10,94 @@ InterviewIQ/
 ├── DEPLOYMENT.md                     # Neon + Render + Vercel deploy guide
 ├── CONTRIBUTING.md
 ├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── ci.yml                    # CI: backend (ruff/mypy/pytest) + frontend (typecheck/lint/build)
-├── scripts/
-│   └── setup.sh                      # one-command local bootstrap
+├── .github/workflows/ci.yml          # CI: backend (ruff/mypy/pytest) + frontend (typecheck/lint/build)
+├── scripts/setup.sh                  # one-command local bootstrap
 ├── docker/
 │   ├── server.Dockerfile             # backend image (python:3.11-slim, uvicorn)
 │   ├── client.Dockerfile             # [stub] frontend deploys via Vercel
 │   └── docker-compose.yml            # postgres + server (redis off by default)
 │
 ├── docs/
-│   ├── ARCHITECTURE.md               # architecture + Build/Scaffold/Defer matrix
-│   ├── API_CONTRACTS.md              # REST envelope, endpoints, error codes
-│   ├── DATABASE.md                   # schema, ERD, JSONB payloads
+│   ├── ARCHITECTURE.md   API_CONTRACTS.md   DATABASE.md
 │   ├── AI_PROVIDERS.md               # provider-agnostic AI: env vars + examples
-│   ├── ROADMAP.md                    # phased delivery plan
-│   ├── FOLDER_STRUCTURE.md           # planned/target tree (tagged)
-│   ├── PROJECT_STRUCTURE.md          # this file — actual current tree
-│   ├── PHASE_1_PLAN.md               # block-level Phase 1 plan
-│   ├── TASKS.md                      # atomic tasks T01–T50
-│   ├── PHASE1_CHECKLIST.md           # build order + critical path
-│   ├── SETUP_GUIDE.md                # local dev setup
-│   ├── REPOSITORY_BOOTSTRAP.md       # repo init + branch strategy
-│   └── AGENT_HANDOFF.md              # coding-agent operating contract
+│   ├── ROADMAP.md   FOLDER_STRUCTURE.md   PROJECT_STRUCTURE.md (this file)
+│   ├── PHASE_1_PLAN.md   TASKS.md   PHASE1_CHECKLIST.md
+│   └── SETUP_GUIDE.md   REPOSITORY_BOOTSTRAP.md   AGENT_HANDOFF.md
 │
 ├── server/                           # ── BACKEND (FastAPI + LangGraph, Python 3.11) ──
-│   ├── pyproject.toml                # deps + ruff/black/mypy/pytest config
-│   ├── alembic.ini
-│   ├── .env.example                  # backend env contract (AI providers, DB, etc.)
-│   ├── README.md
+│   ├── pyproject.toml   alembic.ini   .env.example   README.md
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py                   # ← BACKEND ENTRY POINT (create_app / app)
+│   │   ├── main.py                   # ← BACKEND ENTRY POINT (create_app; startup AI validation)
 │   │   ├── dependencies.py           # DI: get_ai_provider, get_cache, get_task_store
-│   │   ├── config/
-│   │   │   └── settings.py           # Pydantic Settings (env)
+│   │   ├── config/settings.py        # Pydantic Settings (env): providers, per-agent models, DB...
 │   │   ├── core/
 │   │   │   ├── ai/
-│   │   │   │   ├── base.py            # AIProvider ABC, AIRequest, AIMessage
-│   │   │   │   ├── factory.py         # config-driven provider selection
+│   │   │   │   ├── base.py            # AIProvider ABC, AIRequest (incl. model), AIMessage
+│   │   │   │   ├── factory.py         # AIProviderFactory.create(settings) — config-driven
 │   │   │   │   ├── json_retry.py      # parse-or-retry wrapper
-│   │   │   │   ├── validation.py      # startup credential validation
-│   │   │   │   └── providers/
-│   │   │   │       ├── anthropic.py
-│   │   │   │       ├── openai.py      # OpenAI + OpenAI-compatible/local (base_url)
-│   │   │   │       ├── gemini.py
-│   │   │   │       └── bedrock.py     # AWS Bedrock (Converse API)
+│   │   │   │   ├── validation.py      # startup credential validation (fail-fast)
+│   │   │   │   └── providers/         # anthropic · openai (+ compatible/local) · gemini · bedrock
 │   │   │   ├── cache/                 # CacheStore ABC + memory (default) + redis + factory
 │   │   │   ├── tasks/                 # TaskStore ABC + memory (default) + redis + factory
-│   │   │   ├── flags/                 # FeatureFlags
-│   │   │   ├── rag/                   # KnowledgeProvider ABC + NoKnowledgeProvider (scaffold)
-│   │   │   ├── memory/                # MemoryStore ABC (Phase 2 scaffold)
+│   │   │   ├── flags/   rag/   memory/  # feature flags + scaffolds
 │   │   │   └── exceptions.py          # AppError, InputValidationError, ResourceNotFoundError
 │   │   ├── agents/
-│   │   │   ├── state.py               # AgentState (TypedDict)
-│   │   │   ├── graph.py               # career → (job?) skill_gap → question
-│   │   │   ├── resume_agent.py
-│   │   │   ├── job_agent.py
-│   │   │   ├── career_agent.py        # Career Intelligence (always runs)
-│   │   │   ├── skill_gap_agent.py
-│   │   │   └── question_agent.py
+│   │   │   ├── state.py               # AgentState (TypedDict) incl. career_report
+│   │   │   ├── graph.py               # career → (job_data?) skill_gap → question  (conditional)
+│   │   │   ├── career_agent.py        # Career Intelligence (always runs; evidence-driven)
+│   │   │   ├── resume_agent.py  job_agent.py  skill_gap_agent.py  question_agent.py
 │   │   ├── prompts/
-│   │   │   ├── resume_prompt.py
-│   │   │   ├── job_prompt.py
-│   │   │   ├── career_prompt.py       # evidence-based career report prompt
-│   │   │   ├── skill_gap_prompt.py
-│   │   │   └── question_gen_prompt.py
+│   │   │   ├── career_prompt.py       # rigorous, anti-inflation, evidence-required
+│   │   │   └── resume_prompt.py  job_prompt.py  skill_gap_prompt.py  question_gen_prompt.py
 │   │   ├── features/                  # router → controller → service → repository
 │   │   │   ├── resume/                # POST /upload/resume
 │   │   │   ├── scraper/               # POST /scrape/job (url | paste)
-│   │   │   └── analysis/              # POST /analysis/run (jobId optional), /tasks/{id}, /analysis/{id}
+│   │   │   └── analysis/              # POST /analysis/run (jobId OPTIONAL), /tasks/{id}, /analysis/{id}
 │   │   ├── db/
-│   │   │   ├── base.py                # async engine + session factory
-│   │   │   ├── models.py              # Resume, Job, Analysis
-│   │   │   └── dependencies.py        # get_db()
-│   │   ├── middleware/
-│   │   │   ├── error_handler.py       # central exception → ApiError mapping
-│   │   │   └── rate_limit.py          # slowapi limiter
+│   │   │   ├── base.py   dependencies.py
+│   │   │   └── models.py              # Resume, Job, Analysis (job_id nullable + career_report JSONB)
+│   │   ├── middleware/                # error_handler (central) · rate_limit (slowapi)
 │   │   ├── schemas/
 │   │   │   ├── api.py                 # ApiResponse[T], ApiError
 │   │   │   └── domain.py              # ResumeData, JobData, SkillGap, InterviewQuestion,
-│   │   │                              #   CareerReport (+ sections), JobMatch
-│   │   └── utils/
-│   │       ├── logger.py              # structlog
-│   │       ├── response.py            # envelope builders
-│   │       └── pdf_parser.py          # pdfplumber wrapper
-│   ├── migrations/
-│   │   ├── env.py
-│   │   ├── script.py.mako
-│   │   └── versions/
-│   │       ├── 0001_initial_schema.py
-│   │       └── 0002_optional_job_career_report.py
+│   │   │                              #   ScoredDimension, CareerLevelAssessment, ATSSimulation,
+│   │   │                              #   RoleFit, GapAnalysis, CredibilityIssue, ROIImprovement,
+│   │   │                              #   Strength, CareerReport, JobMatch
+│   │   └── utils/                     # logger (structlog) · response · pdf_parser
+│   ├── migrations/versions/
+│   │   ├── 0001_initial_schema.py
+│   │   └── 0002_optional_job_career_report.py   # job_id nullable + career_report JSONB
 │   └── tests/
 │       ├── conftest.py               # FakeAIProvider fixture
 │       ├── unit/ (test_pdf_parser, test_json_retry, test_skill_gap_agent)
 │       └── integration/ (test_pipeline_happy_path)
 │
-└── client/                           # ── FRONTEND (React 18 + TS, Vite) ──
-    ├── package.json                  # npm scripts + deps
-    ├── index.html
-    ├── vite.config.ts
-    ├── tailwind.config.ts
-    ├── postcss.config.js
-    ├── tsconfig.json / tsconfig.node.json
-    ├── .eslintrc.cjs
-    ├── .env.example                  # VITE_API_BASE_URL
-    ├── README.md
+└── client/                           # ── FRONTEND (React 18 + TS, Vite, Tailwind, dark mode) ──
+    ├── package.json  index.html  vite.config.ts  tailwind.config.ts  postcss.config.js
+    ├── tsconfig.json  tsconfig.node.json  .eslintrc.cjs  .env.example  README.md
     └── src/
         ├── main.tsx                  # ← FRONTEND ENTRY POINT
-        ├── App.tsx                   # routes: / (upload), /analysis/:taskId
-        ├── index.css
+        ├── App.tsx                   # routes: / (landing), /analyze (upload), /analysis/:taskId (report)
+        ├── index.css                 # Tailwind + base + focus-visible + print styles
         ├── vite-env.d.ts
-        ├── config/
-        │   └── env.config.ts         # reads VITE_API_BASE_URL
-        ├── services/
-        │   ├── api.client.ts         # axios + envelope unwrap → ApiError
-        │   ├── upload.service.ts
-        │   ├── scraper.service.ts
-        │   └── analysis.service.ts
-        ├── types/
-        │   ├── api.types.ts          # ApiResponse<T>, ApiError
-        │   └── analysis.types.ts     # domain + CareerReport + JobMatch (mirror backend)
+        ├── lib/                      # cn (classnames) · theme (dark mode hook) · export (copy/share/print)
+        ├── config/env.config.ts      # reads VITE_API_BASE_URL
+        ├── services/                 # api.client (axios + envelope unwrap) · upload · scraper · analysis
+        ├── types/                    # api.types · analysis.types (mirror backend incl. CareerReport)
         ├── components/
-        │   ├── layout/ (AppShell, TopBar)
+        │   ├── layout/ (AppShell, TopBar [active nav + theme toggle], BottomNav [mobile tabs])
         │   ├── shared/ (SkillBadge, StatusPill)
-        │   └── ui/ (button, card)
+        │   └── ui/ (button, card, Section [collapsible], Skeleton, icons)
         └── features/
-            ├── upload/               # DropZone, JobInputCard, Stepper, hooks, UploadPage
-            └── analysis/             # useAnalysis (polling), CareerReportView,
-                                      #   ReadinessGauge, SkillGapCard, QuestionTable, AnalysisPage
+            ├── home/LandingPage.tsx          # headline + CTA + visual how-it-works
+            ├── upload/                        # DropZone (drag-over + size + errors), JobInputCard, hooks, UploadPage
+            └── analysis/
+                ├── AnalysisPage.tsx           # report: sticky summary bar + collapsible sections + export
+                ├── hooks/useAnalysis.ts       # submit→poll
+                └── components/                # SummaryBar, ScoreCard, AtsSimulation, CredibilityFlags,
+                                               #   MarketFit, GapAnalysisView, RoiImprovements,
+                                               #   ReadinessGauge, SkillGapCard, QuestionTable,
+                                               #   ReportSkeleton, LoadingStages
 ```
 
 ## Entry points & tooling
@@ -156,7 +116,15 @@ InterviewIQ/
 ```
 client → POST /api/v1/analysis/run { resumeId, jobId? } → 202 { taskId }
         AnalysisController → AnalysisService → LangGraph
-            career_agent (always) ──(jobId?)──> skill_gap_agent → question_agent
+            career_agent (ALWAYS) ──(jobId provided?)──> skill_gap_agent → question_agent
+                                  └──(resume only)─────> END
         client polls GET /api/v1/tasks/{taskId} until completed
-        result: { mode, careerReport, jobMatch? }
+        result: { mode: "resume_only" | "job_match", careerReport, jobMatch? }
 ```
+
+## Current capabilities (beyond the original Phase 1)
+
+- **Optional Job Description** — resume-only runs produce a full Career Intelligence Report; adding a job layers in the Job Match analysis. One pipeline, conditional graph.
+- **Evidence-driven report** — every score carries `reasoning`, `evidenceFound`, `evidenceMissing`; ATS field-by-field simulation; market fit with drivers/blockers; credibility flags; before→after ROI; `insufficient_data` instead of guessing.
+- **Provider-agnostic AI** — Anthropic, OpenAI, Gemini, AWS Bedrock, and any OpenAI-compatible/local endpoint (OpenRouter, Ollama, vLLM), selected purely by env (see [AI_PROVIDERS.md](AI_PROVIDERS.md)).
+- **UI/UX** — landing/upload/report screens, dark mode, mobile bottom-nav, accessible states, skeleton + progressive loading, collapsible sections, and report export (copy / Save-as-PDF / share).

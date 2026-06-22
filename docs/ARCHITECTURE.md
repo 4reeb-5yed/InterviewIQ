@@ -21,8 +21,9 @@ This is the single most important table in the spec. It keeps the MVP honest.
 
 | Capability | Phase 1 status | Notes |
 |------------|----------------|-------|
-| AI provider abstraction (`AIProvider` + factory) | **Build** | Anthropic provider only; others stubbed |
-| LangGraph analysis pipeline | **Build** | Resume → Job → SkillGap → Question |
+| AI provider abstraction (`AIProvider` + factory) | **Build** | Anthropic, OpenAI, Gemini, AWS Bedrock + OpenAI-compatible/local; startup credential validation |
+| LangGraph analysis pipeline | **Build** | Career Intelligence (always) → optional SkillGap → Question |
+| Resume-only Career Intelligence report | **Build** | Evidence-driven; JD optional (see §12) |
 | Resume upload + PDF parse | **Build** | `pdfplumber` |
 | Job scraping (URL) + pasted-text fallback | **Build** | `httpx` + `BeautifulSoup4` |
 | Question prediction | **Build** | Typed, ranked output |
@@ -79,20 +80,22 @@ This is the single most important table in the spec. It keeps the MVP honest.
 ## 4. Request flow (analysis pipeline)
 
 ```
-POST /api/v1/analysis/run  { resumeId, jobId }
+POST /api/v1/analysis/run  { resumeId, jobId? }   ── jobId is OPTIONAL
         │
         ▼
 AnalysisController  ── orchestrates only, no logic
         │
         ▼
 AnalysisService
-   ├─ cache.get("analysis:{resumeId}:{jobId}")  ── hit → return
-   ├─ load resume + job via repositories
-   ├─ run LangGraph: ResumeAgent → JobAgent → SkillGapAgent → QuestionAgent
-   ├─ persist Analysis row
+   ├─ cache.get("analysis:{resumeId}:{jobId|none}")  ── hit → return
+   ├─ load resume (+ job if jobId) via repositories
+   ├─ run LangGraph: CareerAgent (always) ─(jobId?)→ SkillGapAgent → QuestionAgent
+   ├─ persist Analysis row (career_report; job-match cols when jobId given)
    └─ cache.set(...)
         │
    (runs in BackgroundTask; client polls GET /tasks/{taskId})
+
+result = { mode: "resume_only" | "job_match", careerReport, jobMatch? }
 ```
 
 Because the full pipeline can take 15–30s, `/analysis/run` returns `202 { taskId }` immediately and the work runs in a FastAPI `BackgroundTask`. The frontend polls `GET /api/v1/tasks/{taskId}` (TanStack Query `refetchInterval`) until terminal state.
@@ -109,16 +112,9 @@ All agents depend on the `AIProvider` interface; the concrete class is resolved 
 class AIRequest:
     system_prompt: str
     user_message: str
+    model: str                 # per-agent model, supplied from settings
     temperature: float = 0.3
     max_tokens: int = 2000
-
-@dataclass
-class AIMessage:
-    content: str
-    model: str
-    input_tokens: int
-    output_tokens: int
-    latency_ms: float
 
 class AIProvider(ABC):
     @abstractmethod
@@ -126,18 +122,19 @@ class AIProvider(ABC):
 ```
 
 ```python
-# core/ai/factory.py
+# core/ai/factory.py  (config-driven; selection by AI_PROVIDER)
 class AIProviderFactory:
     @staticmethod
-    def create(provider: str, api_key: str) -> AIProvider:
-        match provider:
-            case "anthropic": return AnthropicProvider(api_key)   # Phase 1
-            case "openai":    return OpenAIProvider(api_key)       # scaffold
-            case "gemini":    return GeminiProvider(api_key)       # scaffold
-            case _: raise ValueError(f"Unknown provider: {provider}")
+    def create(settings: Settings) -> AIProvider:
+        match settings.ai_provider.lower():
+            case "anthropic":                          return AnthropicProvider(...)
+            case "openai" | "openrouter" | "local":    return OpenAIProvider(...)   # honours AI_BASE_URL
+            case "gemini":                             return GeminiProvider(...)
+            case "bedrock":                            return BedrockProvider(...)
+            case _: raise ValueError(...)
 ```
 
-Switching providers = change `AI_PROVIDER` env var. Per-agent model names also come from env (e.g. `SKILL_GAP_AGENT_MODEL`), so no model string is hardcoded in business logic.
+All four providers are implemented; `validate_ai_config()` runs at startup and fails fast if the selected provider is missing credentials. Switching providers = change `AI_PROVIDER` (+ that provider's env). Per-agent model names also come from env (e.g. `CAREER_AGENT_MODEL`, `SKILL_GAP_AGENT_MODEL`). Full matrix + examples (incl. local Ollama/vLLM) in [AI_PROVIDERS.md](AI_PROVIDERS.md).
 
 **Prompt contract** (every prompt module): clear persona, JSON-only output, schema inline, parsed with a retry wrapper (up to 3 attempts on invalid JSON). Temperatures: structured tasks `0.2–0.4`, roadmap `0.5`, conversational interview `0.7`.
 
@@ -161,15 +158,18 @@ class AgentState(TypedDict):
 ```
 
 ```python
-# agents/graph.py  (Phase 1 — linear)
-graph.set_entry_point("resume_agent")
-graph.add_edge("resume_agent",    "job_agent")
-graph.add_edge("job_agent",       "skill_gap_agent")
+# agents/graph.py  (current — career always runs; job branch is conditional)
+graph.set_entry_point("career_agent")
+graph.add_conditional_edges(
+    "career_agent",
+    lambda s: "job" if s.get("job_data") else "end",
+    {"job": "skill_gap_agent", "end": END},
+)
 graph.add_edge("skill_gap_agent", "question_agent")
 graph.add_edge("question_agent",  END)
 ```
 
-Phase 2+ can add conditional edges (e.g. company-intelligence routing) without touching existing nodes.
+Resume and job are parsed at ingest time (`/upload/resume`, `/scrape/job`), so the analysis graph enters at `career_agent` with `resume_data` (and `job_data` when a JD was provided) already in state.
 
 ---
 
@@ -257,3 +257,34 @@ These are intentionally **not** implemented now. They are recorded so future pha
 | Rate limiting | `slowapi`, applied to AI routes (e.g. 30 req/min/IP) |
 | Validation | Pydantic v2 schemas per route |
 | Responses | All wrapped in `ApiResponse<T>` or `ApiError` |
+
+
+
+---
+
+## 12. Changes since the original Phase 1 plan
+
+The base architecture is unchanged (layering, DI, repository, provider-agnostic AI, typed
+contracts). These capabilities were added on top, on `feature/analysis-quality-ux`:
+
+1. **Optional Job Description.** `RunAnalysisRequest.job_id` is optional. `analyses.job_id` is
+   nullable and a `career_report` JSONB column was added (migration `0002`). The graph runs the
+   career-intelligence node always, and routes into skill-gap → question only when a JD is present.
+2. **Evidence-driven Career Intelligence report.** `CareerReport` replaces ad-hoc fields with:
+   `ScoredDimension` (score + reasoning + `evidenceFound` + `evidenceMissing`, with an
+   `insufficient_data` status), `CareerLevelAssessment`, field-by-field `ATSSimulation`,
+   `RoleFit` (tier + drivers/blockers), `GapAnalysis` (how-to-acquire), `CredibilityIssue`, and
+   before→after `ROIImprovement`. The prompt enforces anti-inflation rules (no score >85 without
+   exceptional evidence, no generic advice, every claim tied to resume text).
+3. **All AI providers implemented.** Anthropic, OpenAI (and OpenAI-compatible/local via
+   `AI_BASE_URL`), Gemini, and AWS Bedrock (Converse API). `AIProviderFactory.create(settings)` +
+   `validate_ai_config()` at startup. `AIRequest` carries the per-agent `model`.
+4. **UI/UX overhaul.** Design system (Inter, dark mode, 8px spacing, accessible states), landing +
+   upload + report screens, sticky summary bar, skeleton + progressive loading, collapsible
+   evidence-paired sections, mobile bottom-nav, and report export (copy / Save-as-PDF / Web Share).
+
+**Result shape (current):** `{ mode: "resume_only" | "job_match", careerReport, jobMatch? }`.
+
+**Note:** because `CareerReport`'s JSON shape changed, analyses created before this change won't
+deserialize; run a fresh analysis. The current actual file tree lives in
+[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md).

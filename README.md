@@ -2,7 +2,7 @@
 
 > AI Technical Interview Reverse Engineer — take a resume + a target job, identify skill gaps, predict likely interview questions, run a mock interview, and generate a study roadmap.
 
-**Status:** ✅ Phase 1 implemented. Backend (FastAPI + LangGraph) and frontend (React + TS) are built; runs locally with Docker Compose (no Redis) and deploys to Vercel + Render + Neon via env vars. See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+**Status:** ✅ Phase 1 complete **+ enhancements.** Resume-only **Career Intelligence Report** (Job Description optional), evidence-driven scoring, **provider-agnostic AI** (Anthropic / OpenAI / Gemini / Bedrock / local), and a redesigned UI (dark mode, mobile, report export). Runs locally with Docker Compose (no Redis) and deploys to Vercel + Render + Neon via env vars. See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md), [docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md), and [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Quickstart (local)
 
@@ -28,18 +28,20 @@ If a pattern doesn't earn its keep in the MVP, it's **scaffolded** (interface + 
 
 ---
 
-## MVP scope (Phase 1)
+## What it does (current)
 
-The MVP delivers exactly four capabilities, end to end, deployed:
+Resume in, evidence-based report out. A Job Description is **optional**.
 
 1. **Resume Upload** — PDF upload + text extraction → structured resume data.
-2. **Job Scraping** — fetch a job posting (URL) or accept pasted text → structured job data.
-3. **Analysis Graph** — LangGraph pipeline: Resume → Job → Skill Gap → Questions.
-4. **Question Prediction** — typed, ranked list of likely interview questions with a readiness score.
+2. **Career Intelligence Report (resume-only)** — evidence-driven scores (ATS Readiness, Resume Quality, Employability, Interview Probability, Career Level — each with reasoning + evidence found/missing), field-by-field **ATS simulation**, **market fit** roles (drivers/blockers, realistic vs stretch), **gap-to-next-level** with how-to-acquire, **credibility flags**, and before→after **ROI improvements**. Uses `insufficient_data` instead of guessing.
+3. **Job Match (optional)** — add a job (URL or pasted text) to also get skill gaps, a readiness score, and predicted interview questions. Same pipeline, conditional graph.
+4. **Provider-agnostic AI** — switch between Anthropic, OpenAI, Gemini, AWS Bedrock, or a local/OpenAI-compatible model by editing `.env` only. See [docs/AI_PROVIDERS.md](docs/AI_PROVIDERS.md).
 
-Plus a minimal frontend (Upload screen + Analysis screen) and a deployed demo.
+Frontend: landing → upload → report, with dark mode, mobile bottom-nav, skeleton + progressive loading, collapsible sections, and export (copy / Save-as-PDF / share).
 
-**Not in the MVP** (scaffolded or deferred): mock interview module, study roadmap, interview memory, RAG, company intelligence, event bus, analytics dashboard, advanced LLM observability.
+**Deferred to later phases:** stateful mock interview, study roadmap, interview memory, RAG, company intelligence, event bus, analytics dashboard, advanced LLM observability.
+
+> The original four-capability Phase 1 plan (Resume → Job → Skill Gap → Questions) is documented in [docs/PHASE_1_PLAN.md](docs/PHASE_1_PLAN.md); the app has since been extended as above.
 
 ---
 
@@ -47,9 +49,9 @@ Plus a minimal frontend (Upload screen + Analysis screen) and a deployed demo.
 
 | Layer | Choice |
 |-------|--------|
-| Frontend | React 18 + TypeScript, Vite, Tailwind + shadcn/ui, TanStack Query |
+| Frontend | React 18 + TypeScript, Vite, Tailwind (dark mode), TanStack Query |
 | Backend | Python 3.11+, FastAPI, Pydantic v2, SQLAlchemy 2.0 async, Alembic |
-| AI orchestration | LangGraph + provider-agnostic AI abstraction (Anthropic default) |
+| AI orchestration | LangGraph + provider-agnostic AI (Anthropic / OpenAI / Gemini / Bedrock / OpenAI-compatible & local) |
 | Database | PostgreSQL (Neon in prod, Postgres container locally) |
 | Cache / tasks | Optional Redis behind an interface; **in-memory fallback is the MVP default** |
 
@@ -88,8 +90,11 @@ The app must deploy to the free tier **without code changes** — only environme
 
 ## Project status
 
-Phase 1 is complete: resume upload, job ingestion (URL or paste), the LangGraph
-analysis pipeline (skill gaps + readiness + predicted questions), the submit→poll
-async flow, and the Upload/Analysis frontend screens. Mock interview, study roadmap,
-memory, RAG, company intelligence, event bus, and analytics remain deferred to later
-phases (scaffolded where noted). See [docs/ROADMAP.md](docs/ROADMAP.md).
+Phase 1 is complete and **extended**: resume upload, job ingestion (URL or paste), and an
+async submit→poll LangGraph pipeline that **always** produces an evidence-driven Career
+Intelligence Report and **optionally** adds Job Match (skill gaps + readiness + predicted
+questions) when a JD is provided. The AI layer is fully provider-agnostic (Anthropic / OpenAI /
+Gemini / Bedrock / local). The frontend has landing, upload, and report screens with dark mode,
+mobile navigation, and export. Mock interview, study roadmap, memory, RAG, company intelligence,
+event bus, and analytics remain deferred. See [docs/ROADMAP.md](docs/ROADMAP.md) and
+[docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).

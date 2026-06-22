@@ -63,99 +63,97 @@ export interface InterviewQuestion {
   likelihoodScore: number;
 }
 
-// --- Career Intelligence Report (resume-only, always present) ----------------
+// --- Career Intelligence Report (resume-only, evidence-driven) ---------------
 
-export interface EvidenceScore {
-  score: number;
-  rating: string;
+export type DimensionStatus = "ok" | "insufficient_data";
+
+export interface ScoredDimension {
+  status: DimensionStatus;
+  score: number | null;
   reasoning: string;
-  evidence: string[];
+  evidenceFound: string[];
+  evidenceMissing: string[];
+  reason?: string | null;
 }
 
-export interface ATSIssue {
-  issue: string;
-  severity: "high" | "medium" | "low";
-  reasoning: string;
-  fix: string;
-}
-
-export interface ATSReadiness {
-  score: number;
-  rating: string;
-  reasoning: string;
-  evidence: string[];
-  issues: ATSIssue[];
-}
-
-export interface StrengthsWeaknesses {
-  strengths: string[];
-  weaknesses: string[];
-  reasoning: string;
-}
-
-export interface CareerLevel {
+export interface CareerLevelAssessment extends ScoredDimension {
   level: string;
-  reasoning: string;
-  evidence: string[];
+}
+
+export type AtsFieldStatus = "pass" | "fail" | "at_risk";
+
+export interface AtsField {
+  field: string;
+  status: AtsFieldStatus;
+  reason: string;
+}
+
+export interface AtsSimulation {
+  fields: AtsField[];
+  parsingRisks: string[];
 }
 
 export interface RoleFit {
   role: string;
   fitScore: number;
+  tier: "realistic" | "stretch";
   reasoning: string;
+  fitDrivers: string[];
+  fitBlockers: string[];
 }
 
-export interface GapItem {
-  area: string;
-  action: string;
-  reasoning: string;
+export interface Gap {
+  gap: string;
+  whyItMatters: string;
+  howToAcquire: string;
 }
 
-export interface GapToNextLevel {
+export interface GapAnalysis {
+  currentLevel: string;
   targetLevel: string;
-  reasoning: string;
-  gaps: GapItem[];
+  gaps: Gap[];
+}
+
+export type CredibilityIssueType =
+  | "Skills Without Evidence"
+  | "Unproven Claim"
+  | "Weak Project"
+  | "Buzzword"
+  | "Missing Metric";
+
+export interface CredibilityIssue {
+  issueType: CredibilityIssueType;
+  flaggedText: string;
+  problem: string;
+  fix: string;
 }
 
 export interface ROIImprovement {
+  priority: "high" | "medium" | "low";
   change: string;
-  impact: "high" | "medium" | "low";
-  reasoning: string;
-  exampleBefore?: string | null;
-  exampleAfter?: string | null;
+  reason: string;
+  expectedImpact: string;
+  before: string;
+  after: string;
 }
 
-export interface RoadmapStep {
-  timeframe: string;
-  focus: string;
-  actions: string[];
-}
-
-export interface MissingSection {
-  section: string;
-  importance: "critical" | "recommended" | "optional";
-  reasoning: string;
-}
-
-export interface HiddenStrength {
+export interface Strength {
   strength: string;
   evidence: string;
-  howToLeverage: string;
 }
 
 export interface CareerReport {
-  atsReadiness: ATSReadiness;
-  resumeQuality: EvidenceScore;
-  strengthsWeaknesses: StrengthsWeaknesses;
-  careerLevel: CareerLevel;
-  roleMatches: RoleFit[];
-  employability: EvidenceScore;
-  interviewProbability: EvidenceScore;
-  gapToNextLevel: GapToNextLevel;
+  atsReadiness: ScoredDimension;
+  resumeQuality: ScoredDimension;
+  employability: ScoredDimension;
+  interviewProbability: ScoredDimension;
+  careerLevel: CareerLevelAssessment;
+  atsSimulation: AtsSimulation;
+  marketFit: RoleFit[];
+  gapAnalysis: GapAnalysis;
+  credibilityIssues: CredibilityIssue[];
   roiImprovements: ROIImprovement[];
-  careerRoadmap: RoadmapStep[];
-  missingSections: MissingSection[];
-  hiddenStrengths: HiddenStrength[];
+  strengths: Strength[];
   overallSummary: string;
 }
 

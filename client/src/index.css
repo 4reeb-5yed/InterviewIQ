@@ -3,9 +3,29 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+html {
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+
+/* Visible focus ring for keyboard users on any focusable element. */
+:focus-visible {
+  outline: 2px solid theme("colors.indigo.500");
+  outline-offset: 2px;
+}
+
+/* Print: reveal collapsed sections and drop chrome for a clean PDF. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
 }

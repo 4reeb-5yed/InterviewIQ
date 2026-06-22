@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "../../components/ui/button";
+import { ArrowRight } from "../../components/ui/icons";
 import type { JobIngestPayload } from "../../services/scraper.service";
 import { ApiError } from "../../types/api.types";
 import { DropZone } from "./components/DropZone";
 import { JobInputCard } from "./components/JobInputCard";
-import { Stepper } from "./components/Stepper";
 import { useJobIngest } from "./hooks/useJobIngest";
 import { useResumeUpload } from "./hooks/useResumeUpload";
 import { useRunAnalysis } from "./hooks/useRunAnalysis";
@@ -29,7 +29,7 @@ export function UploadPage() {
     setError(null);
     resumeUpload.mutate(file, {
       onSuccess: (data) => setResumeId(data.resumeId),
-      onError: (e) => setError(messageOf(e, "Upload failed")),
+      onError: (e) => setError(messageOf(e, "Upload failed. Please try a different PDF.")),
     });
   };
 
@@ -37,7 +37,7 @@ export function UploadPage() {
     setError(null);
     jobIngest.mutate(payload, {
       onSuccess: (data) => setJobId(data.jobId),
-      onError: (e) => setError(messageOf(e, "Job ingestion failed")),
+      onError: (e) => setError(messageOf(e, "Couldn’t read that job. Check the URL or paste the text.")),
     });
   };
 
@@ -48,7 +48,7 @@ export function UploadPage() {
       { resumeId, jobId: jobId ?? undefined },
       {
         onSuccess: (data) => navigate(`/analysis/${data.taskId}`),
-        onError: (e) => setError(messageOf(e, "Could not start analysis")),
+        onError: (e) => setError(messageOf(e, "Could not start analysis. Please try again.")),
       },
     );
   };
@@ -56,48 +56,43 @@ export function UploadPage() {
   const ready = Boolean(resumeId);
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Analyze your interview readiness</h1>
-        <p className="text-sm text-slate-500">
-          Upload your resume for a Career Intelligence Report. Add a target job
-          (optional) to also get a job-match analysis and predicted questions.
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          Analyze your resume
+        </h1>
+        <p className="mt-2 text-sm font-normal text-slate-500 dark:text-slate-400">
+          Upload a PDF for a full Career Intelligence Report. A job description is optional.
         </p>
       </div>
 
-      <Stepper
-        steps={[
-          { label: "Resume", complete: Boolean(resumeId) },
-          { label: "Job (optional)", complete: Boolean(jobId) },
-          { label: "Analyze", complete: false },
-        ]}
+      <DropZone
+        onSelect={handleFile}
+        isUploading={resumeUpload.isPending}
+        isDone={Boolean(resumeId)}
+        parsedName={resumeUpload.data?.parsedData.name}
       />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <DropZone
-          onSelect={handleFile}
-          isUploading={resumeUpload.isPending}
-          isDone={Boolean(resumeId)}
-          fileName={resumeUpload.data?.parsedData.name}
-        />
-        <JobInputCard
-          onSubmit={handleJob}
-          isSubmitting={jobIngest.isPending}
-          isDone={Boolean(jobId)}
-          jobTitle={jobIngest.data?.jobData.title}
-        />
-      </div>
+      <JobInputCard
+        onSubmit={handleJob}
+        isSubmitting={jobIngest.isPending}
+        isDone={Boolean(jobId)}
+        jobTitle={jobIngest.data?.jobData.title}
+      />
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </p>
       )}
 
-      <div className="flex items-center justify-end gap-3">
-        <span className="text-xs text-slate-400">
-          {jobId ? "Resume + job match" : "Resume-only (add a job for match analysis)"}
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm font-normal text-slate-400">
+          {jobId ? "Resume + job match" : "Resume-only Career Intelligence"}
         </span>
-        <Button onClick={handleRun} disabled={!ready || runAnalysis.isPending}>
-          {runAnalysis.isPending ? "Starting…" : jobId ? "Run Analysis" : "Analyze Resume"}
+        <Button size="lg" onClick={handleRun} disabled={!ready || runAnalysis.isPending}>
+          {runAnalysis.isPending ? "Starting…" : jobId ? "Run analysis" : "Analyze resume"}
+          <ArrowRight className="h-5 w-5" />
         </Button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button } from "../../../components/ui/button";
-import { Card, CardBody, CardHeader } from "../../../components/ui/card";
+import { cn } from "../../../lib/cn";
 import type { JobIngestPayload } from "../../../services/scraper.service";
 import type { JobInputMode } from "../types";
 
@@ -13,7 +13,7 @@ interface JobInputCardProps {
 }
 
 const INPUT_CLS =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100";
 
 export function JobInputCard({ onSubmit, isSubmitting, isDone, jobTitle }: JobInputCardProps) {
   const [mode, setMode] = useState<JobInputMode>("url");
@@ -36,72 +36,79 @@ export function JobInputCard({ onSubmit, isSubmitting, isDone, jobTitle }: JobIn
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium">2 · Target job</h2>
-          <div className="flex gap-1 text-xs">
-            <button
-              type="button"
-              onClick={() => setMode("url")}
-              className={`rounded px-2 py-1 ${mode === "url" ? "bg-indigo-100 text-indigo-700" : "text-slate-500"}`}
-            >
-              URL
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("paste")}
-              className={`rounded px-2 py-1 ${mode === "paste" ? "bg-indigo-100 text-indigo-700" : "text-slate-500"}`}
-            >
-              Paste
-            </button>
-          </div>
+    <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Target job <span className="font-normal text-slate-400">· optional</span>
+          </h2>
+          <p className="mt-1 text-sm font-normal text-slate-500 dark:text-slate-400">
+            Add one to also get a job-match analysis.
+          </p>
         </div>
-      </CardHeader>
-      <CardBody>
-        <form onSubmit={submit} className="space-y-3">
-          {mode === "url" ? (
-            <input
-              className={INPUT_CLS}
-              type="url"
-              placeholder="https://company.com/jobs/123"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
+        <div className="flex gap-1 text-xs">
+          {(["url", "paste"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={cn(
+                "rounded-md px-2 py-1 font-semibold capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                mode === m
+                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                  : "text-slate-500 dark:text-slate-400",
+              )}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <form onSubmit={submit} className="mt-4 space-y-3">
+        {mode === "url" ? (
+          <input
+            className={INPUT_CLS}
+            type="url"
+            placeholder="https://company.com/jobs/123"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            required
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className={INPUT_CLS}
+                placeholder="Company (optional)"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+              />
+              <input
+                className={INPUT_CLS}
+                placeholder="Role (optional)"
+                value={roleTitle}
+                onChange={(e) => setRoleTitle(e.target.value)}
+              />
+            </div>
+            <textarea
+              className={cn(INPUT_CLS, "h-28 resize-none")}
+              placeholder="Paste the job description…"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               required
             />
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  className={INPUT_CLS}
-                  placeholder="Company (optional)"
-                  value={companyName}
-                  onChange={(event) => setCompanyName(event.target.value)}
-                />
-                <input
-                  className={INPUT_CLS}
-                  placeholder="Role (optional)"
-                  value={roleTitle}
-                  onChange={(event) => setRoleTitle(event.target.value)}
-                />
-              </div>
-              <textarea
-                className={`${INPUT_CLS} h-28 resize-none`}
-                placeholder="Paste the job description…"
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                required
-              />
-            </>
-          )}
-          <Button type="submit" variant="secondary" disabled={isSubmitting}>
-            {isSubmitting ? "Analyzing…" : isDone ? "Re-submit job" : "Submit job"}
-          </Button>
-          {isDone && (
-            <p className="text-xs text-green-600">Job parsed{jobTitle ? `: ${jobTitle}` : ""}.</p>
-          )}
-        </form>
-      </CardBody>
-    </Card>
+          </>
+        )}
+        <Button type="submit" variant="secondary" disabled={isSubmitting}>
+          {isSubmitting ? "Analyzing…" : isDone ? "Re-submit job" : "Add job"}
+        </Button>
+        {isDone && (
+          <p className="text-sm font-normal text-green-700 dark:text-green-400">
+            Job added{jobTitle ? `: ${jobTitle}` : ""}.
+          </p>
+        )}
+      </form>
+    </div>
   );
 }

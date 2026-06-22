@@ -20,6 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.config.settings import Settings, get_settings
+from app.features.analysis.router import router as analysis_router
 from app.features.resume.router import router as resume_router
 from app.features.scraper.router import router as scraper_router
 from app.schemas.api import ApiResponse
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
     # --- Feature routers -----------------------------------------------------
     app.include_router(resume_router)
     app.include_router(scraper_router)
+    app.include_router(analysis_router)
 
     log.info("app_initialized", environment=settings.environment)
     return app

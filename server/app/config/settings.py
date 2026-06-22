@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 60
     rate_limit_max_requests: int = 30
 
+    # --- Cache ----------------------------------------------------------------
+    cache_analysis_ttl_seconds: int = 86400
+
     # --- Optional Redis (unset => in-memory cache/task implementations) ------
     redis_url: str | None = None
 

@@ -2,7 +2,17 @@
 
 > AI Technical Interview Reverse Engineer — take a resume + a target job, identify skill gaps, predict likely interview questions, run a mock interview, and generate a study roadmap.
 
-**Status:** 🟡 Planning / Specification phase. No application code yet — this repository currently contains the finalized design and the Phase 1 implementation plan, ready for handoff to an IDE-based coding agent (Roo / VS Code / Kiro IDE).
+**Status:** ✅ Phase 1 implemented. Backend (FastAPI + LangGraph) and frontend (React + TS) are built; runs locally with Docker Compose (no Redis) and deploys to Vercel + Render + Neon via env vars. See [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+
+## Quickstart (local)
+
+```bash
+./scripts/setup.sh                                   # .env files + install backend & frontend deps
+docker compose -f docker/docker-compose.yml up       # Postgres + backend (migrations + API), no Redis
+cd client && npm run dev                              # frontend on http://localhost:5173
+```
+
+Add your Anthropic key to `server/.env` (`AI_API_KEY`) before running an analysis.
 
 ---
 
@@ -74,6 +84,10 @@ The app must deploy to the free tier **without code changes** — only environme
 
 ---
 
-## Next step
+## Project status
 
-Hand `docs/AGENT_HANDOFF.md` to an IDE coding agent. It points to `docs/TASKS.md` (numbered tasks) and `docs/PHASE1_CHECKLIST.md` (build order). Implement Phase 1 one task at a time — each is self-contained with explicit acceptance criteria to keep context windows small.
+Phase 1 is complete: resume upload, job ingestion (URL or paste), the LangGraph
+analysis pipeline (skill gaps + readiness + predicted questions), the submit→poll
+async flow, and the Upload/Analysis frontend screens. Mock interview, study roadmap,
+memory, RAG, company intelligence, event bus, and analytics remain deferred to later
+phases (scaffolded where noted). See [docs/ROADMAP.md](docs/ROADMAP.md).

@@ -14,10 +14,10 @@ from app.core.ai.json_retry import generate_json
 from app.prompts.career_prompt import SYSTEM_PROMPT, TEMPERATURE
 from app.schemas.domain import CareerReport
 
-# The report is large; allow more output tokens than the default.
-_MAX_TOKENS = 4000
+# The report is large and detailed; allow ample output tokens.
+_MAX_TOKENS = 6000
 # Cap raw-text evidence context to keep prompts bounded.
-_MAX_RESUME_TEXT = 8000
+_MAX_RESUME_TEXT = 12000
 
 
 class CareerIntelligenceAgent:

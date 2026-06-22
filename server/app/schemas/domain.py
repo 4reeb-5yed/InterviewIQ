@@ -1,7 +1,7 @@
 """Domain models shared across agents, services, and API responses.
 
 Pydantic v2 with camelCase aliasing on the wire (``populate_by_name`` allows
-snake_case construction internally). Mirrors docs/DATABASE.md section 4 and
+snake_case construction internally). Mirrors docs/DATABASE.md and
 docs/API_CONTRACTS.md.
 """
 
@@ -60,7 +60,7 @@ class JobData(CamelModel):
     domain: str
 
 
-# --- Analysis outputs --------------------------------------------------------
+# --- Job-match outputs -------------------------------------------------------
 class SkillGap(CamelModel):
     skill: str
     status: Literal["matched", "partial", "missing"]
@@ -77,107 +77,108 @@ class InterviewQuestion(CamelModel):
     likelihood_score: float = Field(ge=0.0, le=1.0)
 
 
+# =============================================================================
+# Career Intelligence Report (resume-only, evidence-driven)
+# Every scored dimension carries reasoning + what evidence was found AND what
+# was missing. When a field cannot be evaluated, status="insufficient_data".
+# =============================================================================
 
-# --- Career Intelligence Report (resume-only, always produced) ---------------
-# Every score is 0-100 and MUST be accompanied by reasoning + supporting
-# evidence drawn from the actual resume (no generic scores).
 
+class ScoredDimension(CamelModel):
+    """A 0-100 score that must trace back to actual resume content."""
 
-class EvidenceScore(CamelModel):
-    """A 0-100 score with a label, reasoning, and resume-derived evidence."""
-
-    score: int = Field(ge=0, le=100)
-    rating: str
+    status: Literal["ok", "insufficient_data"] = "ok"
+    score: int | None = Field(default=None, ge=0, le=100)
     reasoning: str
-    evidence: list[str] = Field(default_factory=list)
+    evidence_found: list[str] = Field(default_factory=list)
+    evidence_missing: list[str] = Field(default_factory=list)
+    # Populated only when status == "insufficient_data".
+    reason: str | None = None
 
 
-class ATSIssue(CamelModel):
-    issue: str
-    severity: Literal["high", "medium", "low"]
-    reasoning: str
-    fix: str
+class CareerLevelAssessment(ScoredDimension):
+    """Career level classification (with the four scored fields + a label)."""
+
+    level: str = ""
 
 
-class ATSReadiness(CamelModel):
-    score: int = Field(ge=0, le=100)
-    rating: str
-    reasoning: str
-    evidence: list[str] = Field(default_factory=list)
-    issues: list[ATSIssue] = Field(default_factory=list)
+class ATSField(CamelModel):
+    field: str
+    status: Literal["pass", "fail", "at_risk"]
+    reason: str
 
 
-class StrengthsWeaknesses(CamelModel):
-    strengths: list[str] = Field(default_factory=list)
-    weaknesses: list[str] = Field(default_factory=list)
-    reasoning: str
+class ATSSimulation(CamelModel):
+    """Field-by-field ATS parse simulation + parsing risks."""
 
-
-class CareerLevel(CamelModel):
-    level: Literal["intern", "junior", "mid", "senior", "lead", "principal"]
-    reasoning: str
-    evidence: list[str] = Field(default_factory=list)
+    fields: list[ATSField] = Field(default_factory=list)
+    parsing_risks: list[str] = Field(default_factory=list)
 
 
 class RoleFit(CamelModel):
+    """A realistic-now role match with explicit drivers and blockers."""
+
     role: str
     fit_score: int = Field(ge=0, le=100)
+    tier: Literal["realistic", "stretch"]
     reasoning: str
+    fit_drivers: list[str] = Field(default_factory=list)
+    fit_blockers: list[str] = Field(default_factory=list)
 
 
-class GapItem(CamelModel):
-    area: str
-    action: str
-    reasoning: str
+class Gap(CamelModel):
+    gap: str
+    why_it_matters: str
+    how_to_acquire: str
 
 
-class GapToNextLevel(CamelModel):
+class GapAnalysis(CamelModel):
+    current_level: str
     target_level: str
-    reasoning: str
-    gaps: list[GapItem] = Field(default_factory=list)
+    gaps: list[Gap] = Field(default_factory=list)
+
+
+class CredibilityIssue(CamelModel):
+    issue_type: Literal[
+        "Skills Without Evidence",
+        "Unproven Claim",
+        "Weak Project",
+        "Buzzword",
+        "Missing Metric",
+    ]
+    flagged_text: str
+    problem: str
+    fix: str
 
 
 class ROIImprovement(CamelModel):
+    priority: Literal["high", "medium", "low"]
     change: str
-    impact: Literal["high", "medium", "low"]
-    reasoning: str
-    example_before: str | None = None
-    example_after: str | None = None
+    reason: str
+    expected_impact: str
+    before: str
+    after: str
 
 
-class RoadmapStep(CamelModel):
-    timeframe: str
-    focus: str
-    actions: list[str] = Field(default_factory=list)
-
-
-class MissingSection(CamelModel):
-    section: str
-    importance: Literal["critical", "recommended", "optional"]
-    reasoning: str
-
-
-class HiddenStrength(CamelModel):
+class Strength(CamelModel):
     strength: str
     evidence: str
-    how_to_leverage: str
 
 
 class CareerReport(CamelModel):
     """Comprehensive, evidence-based résumé intelligence (resume-only)."""
 
-    ats_readiness: ATSReadiness
-    resume_quality: EvidenceScore
-    strengths_weaknesses: StrengthsWeaknesses
-    career_level: CareerLevel
-    role_matches: list[RoleFit] = Field(default_factory=list)
-    employability: EvidenceScore
-    interview_probability: EvidenceScore
-    gap_to_next_level: GapToNextLevel
+    ats_readiness: ScoredDimension
+    resume_quality: ScoredDimension
+    employability: ScoredDimension
+    interview_probability: ScoredDimension
+    career_level: CareerLevelAssessment
+    ats_simulation: ATSSimulation
+    market_fit: list[RoleFit] = Field(default_factory=list)
+    gap_analysis: GapAnalysis
+    credibility_issues: list[CredibilityIssue] = Field(default_factory=list)
     roi_improvements: list[ROIImprovement] = Field(default_factory=list)
-    career_roadmap: list[RoadmapStep] = Field(default_factory=list)
-    missing_sections: list[MissingSection] = Field(default_factory=list)
-    hidden_strengths: list[HiddenStrength] = Field(default_factory=list)
+    strengths: list[Strength] = Field(default_factory=list)
     overall_summary: str
 
 

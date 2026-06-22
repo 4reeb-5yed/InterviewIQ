@@ -27,7 +27,8 @@ class AnalysisController:
     async def run(
         self, body: RunAnalysisRequest, background_tasks: BackgroundTasks
     ) -> ApiResponse[RunAnalysisResponse]:
-        # Raises ResourceNotFoundError -> NOT_FOUND via the central handler.
+        # job_id is optional (resume-only mode). Raises ResourceNotFoundError
+        # -> NOT_FOUND via the central handler when an id is unknown.
         await self._service.ensure_inputs_exist(body.resume_id, body.job_id)
         task_id = uuid4()
         await self._service.create_task(task_id)

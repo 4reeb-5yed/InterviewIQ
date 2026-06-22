@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # --- Per-agent model identifiers (no hardcoding in business logic) -------
     resume_agent_model: str = "claude-3-5-sonnet-latest"
     job_agent_model: str = "claude-3-5-sonnet-latest"
+    career_agent_model: str = "claude-3-5-sonnet-latest"
     skill_gap_agent_model: str = "claude-3-5-sonnet-latest"
     question_agent_model: str = "claude-3-5-sonnet-latest"
 

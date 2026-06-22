@@ -1,11 +1,10 @@
-"""Analysis controller: orchestrates submit/poll/fetch; maps not-found errors."""
+"""Analysis controller: submit/poll/fetch. Errors map via the central handler."""
 
 from __future__ import annotations
 
 from uuid import UUID, uuid4
 
 from fastapi import BackgroundTasks
-from fastapi.responses import JSONResponse
 
 from app.core.exceptions import ResourceNotFoundError
 from app.features.analysis.schemas import (
@@ -16,7 +15,7 @@ from app.features.analysis.schemas import (
 )
 from app.features.analysis.service import AnalysisService
 from app.schemas.api import ApiResponse
-from app.utils.response import error_response, ok
+from app.utils.response import ok
 
 
 class AnalysisController:
@@ -27,12 +26,9 @@ class AnalysisController:
 
     async def run(
         self, body: RunAnalysisRequest, background_tasks: BackgroundTasks
-    ) -> ApiResponse[RunAnalysisResponse] | JSONResponse:
-        try:
-            await self._service.ensure_inputs_exist(body.resume_id, body.job_id)
-        except ResourceNotFoundError as exc:
-            return error_response("NOT_FOUND", str(exc), status_code=404)
-
+    ) -> ApiResponse[RunAnalysisResponse]:
+        # Raises ResourceNotFoundError -> NOT_FOUND via the central handler.
+        await self._service.ensure_inputs_exist(body.resume_id, body.job_id)
         task_id = uuid4()
         await self._service.create_task(task_id)
         background_tasks.add_task(
@@ -40,10 +36,10 @@ class AnalysisController:
         )
         return ok(RunAnalysisResponse(task_id=task_id))
 
-    async def get_task(self, task_id: UUID) -> ApiResponse[TaskStatusResponse] | JSONResponse:
+    async def get_task(self, task_id: UUID) -> ApiResponse[TaskStatusResponse]:
         status = await self._service.get_task(task_id)
         if status is None:
-            return error_response("NOT_FOUND", f"Unknown task id: {task_id}", status_code=404)
+            raise ResourceNotFoundError(f"Unknown task id: {task_id}")
         return ok(
             TaskStatusResponse(
                 task_id=status.task_id,
@@ -53,12 +49,8 @@ class AnalysisController:
             )
         )
 
-    async def get_analysis(
-        self, analysis_id: UUID
-    ) -> ApiResponse[AnalysisResultResponse] | JSONResponse:
+    async def get_analysis(self, analysis_id: UUID) -> ApiResponse[AnalysisResultResponse]:
         analysis = await self._service.get_analysis(analysis_id)
         if analysis is None:
-            return error_response(
-                "NOT_FOUND", f"Unknown analysis id: {analysis_id}", status_code=404
-            )
+            raise ResourceNotFoundError(f"Unknown analysis id: {analysis_id}")
         return ok(AnalysisResultResponse.from_model(analysis))

@@ -21,6 +21,7 @@ from slowapi.util import get_remote_address
 
 from app.config.settings import Settings, get_settings
 from app.features.resume.router import router as resume_router
+from app.features.scraper.router import router as scraper_router
 from app.schemas.api import ApiResponse
 from app.utils.logger import configure_logging, get_logger
 from app.utils.response import error_response, ok
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
 
     # --- Feature routers -----------------------------------------------------
     app.include_router(resume_router)
+    app.include_router(scraper_router)
 
     log.info("app_initialized", environment=settings.environment)
     return app

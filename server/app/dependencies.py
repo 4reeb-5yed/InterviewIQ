@@ -18,9 +18,9 @@ from functools import lru_cache
 
 
 def get_ai_provider() -> AIProvider:
-    """Build the configured AI provider from settings."""
+    """Build the configured AI provider from settings (provider-agnostic)."""
     settings: Settings = get_settings()
-    return AIProviderFactory.create(settings.ai_provider, settings.ai_api_key)
+    return AIProviderFactory.create(settings)
 
 
 @lru_cache

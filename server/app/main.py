@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.config.settings import get_settings
+from app.core.ai.validation import validate_ai_config
 from app.features.analysis.router import router as analysis_router
 from app.features.resume.router import router as resume_router
 from app.features.scraper.router import router as scraper_router
@@ -28,6 +29,9 @@ def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.environment)
     log = get_logger("app")
+
+    # Fail fast if the selected AI provider is missing required credentials.
+    validate_ai_config(settings)
 
     app = FastAPI(title="InterviewIQ API", version="0.1.0", docs_url="/docs")
     app.state.settings = settings

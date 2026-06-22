@@ -32,8 +32,23 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5173"
 
     # --- AI provider (provider-agnostic) -------------------------------------
+    # AI_PROVIDER selects the implementation: anthropic | openai | gemini | bedrock.
+    # Aliases mapping to the OpenAI-compatible client: openrouter | local |
+    # openai_compatible (use AI_BASE_URL to point at OpenRouter, Ollama, vLLM,
+    # LM Studio, Together, etc.).
     ai_provider: str = "anthropic"
     ai_api_key: str = ""
+
+    # Optional connection overrides for OpenAI-compatible endpoints (OpenRouter,
+    # local LLMs). When AI_BASE_URL is set, the OpenAI client targets it.
+    ai_base_url: str | None = None
+    ai_organization: str | None = None
+
+    # AWS Bedrock credentials/region. If access key/secret are omitted, boto3's
+    # default chain (env vars, shared config, instance role) is used.
+    aws_region: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
 
     # --- Per-agent model identifiers (no hardcoding in business logic) -------
     resume_agent_model: str = "claude-3-5-sonnet-latest"

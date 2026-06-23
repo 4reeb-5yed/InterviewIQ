@@ -270,12 +270,15 @@ contracts). These capabilities were added on top, on `feature/analysis-quality-u
 1. **Optional Job Description.** `RunAnalysisRequest.job_id` is optional. `analyses.job_id` is
    nullable and a `career_report` JSONB column was added (migration `0002`). The graph runs the
    career-intelligence node always, and routes into skill-gap → question only when a JD is present.
-2. **Evidence-driven Career Intelligence report.** `CareerReport` replaces ad-hoc fields with:
-   `ScoredDimension` (score + reasoning + `evidenceFound` + `evidenceMissing`, with an
-   `insufficient_data` status), `CareerLevelAssessment`, field-by-field `ATSSimulation`,
-   `RoleFit` (tier + drivers/blockers), `GapAnalysis` (how-to-acquire), `CredibilityIssue`, and
-   before→after `ROIImprovement`. The prompt enforces anti-inflation rules (no score >85 without
-   exceptional evidence, no generic advice, every claim tied to resume text).
+2. **Evidence-driven Career Intelligence report.** `CareerReport` is a combined recruiter + ATS +
+   hiring-manager audit: `CandidateContext` (stage detection for fair, stage-appropriate standards),
+   `ATSAnalysis` (beyond keywords + how an ATS reads it), `SectionReview[]`, `ProjectAssessment[]`
+   (category-aware; engineering vs business impact — non-commercial work is not penalized for
+   missing users/revenue), `RecruiterSimulation` (10s/30s/full + verdict), `MarketPositioning`
+   (realistic/stretch/unlikely), `GapAnalysis` (why employers care / how evaluated / how to acquire),
+   `CredibilityIssue[]`, `CareerProjection` (six probability `ScoredDimension`s), and before→after
+   `ROIImprovement[]`. Every `ScoredDimension` carries a `confidence` level; the prompt enforces
+   strict evidence, no fabricated metrics, and anti-inflation scoring (>85 rare, >90 very rare).
 3. **All AI providers implemented.** Anthropic, OpenAI (and OpenAI-compatible/local via
    `AI_BASE_URL`), Gemini, and AWS Bedrock (Converse API). `AIProviderFactory.create(settings)` +
    `validate_ai_config()` at startup. `AIRequest` carries the per-agent `model`.

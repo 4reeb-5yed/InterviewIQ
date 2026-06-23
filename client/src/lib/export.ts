@@ -1,29 +1,42 @@
-import type { AnalysisResult, CareerReport } from "../types/analysis.types";
+import type { AnalysisResult, CareerReport, ScoredDimension } from "../types/analysis.types";
+
+function dim(label: string, d: ScoredDimension): string {
+  const value = d.status === "insufficient_data" || d.score === null ? "Insufficient evidence" : `${d.score}/100`;
+  return `- ${label}: ${value} (confidence: ${d.confidence})`;
+}
 
 function careerLines(r: CareerReport): string[] {
-  const dim = (label: string, d: { score: number | null; status: string }) =>
-    `- ${label}: ${d.status === "insufficient_data" || d.score === null ? "N/A" : d.score + "/100"}`;
+  const p = r.careerProjection;
   return [
-    `# InterviewIQ — Career Intelligence Report`,
-    ``,
+    "# InterviewIQ — Career Intelligence Report",
+    "",
+    `Stage: ${r.candidateContext.stage} · Recruiter verdict: ${r.recruiterSimulation.verdict}`,
+    "",
     r.overallSummary,
-    ``,
-    `## Scores`,
-    dim("ATS Readiness", r.atsReadiness),
-    dim("Resume Quality", r.resumeQuality),
-    dim("Employability", r.employability),
-    dim("Interview Probability", r.interviewProbability),
-    `- Career Level: ${r.careerLevel.level || "N/A"}`,
-    ``,
-    `## Top market fit`,
-    ...r.marketFit.slice(0, 3).map((m) => `- ${m.role} (${m.fitScore}/100, ${m.tier})`),
-    ``,
-    `## Top improvements`,
+    "",
+    "## Career projection",
+    dim("Employability", p.employability),
+    dim("Internship probability", p.internshipProbability),
+    dim("Entry-level probability", p.entryLevelProbability),
+    dim("Interview probability", p.interviewProbability),
+    dim("Startup suitability", p.startupSuitability),
+    dim("Enterprise suitability", p.enterpriseSuitability),
+    "",
+    `## ATS: ${r.ats.score ?? "N/A"}/100 (confidence: ${r.ats.confidence})`,
+    r.ats.interpretation,
+    "",
+    "## Market positioning",
+    `Current level: ${r.marketPositioning.currentLevel}`,
+    ...r.marketPositioning.roles
+      .slice(0, 6)
+      .map((m) => `- ${m.role} — ${m.tier} (${m.fitScore}/100)`),
+    "",
+    "## Top improvements",
     ...r.roiImprovements.slice(0, 5).map((i) => `- [${i.priority}] ${i.change}`),
-    ``,
-    `## Credibility flags`,
+    "",
+    "## Credibility flags",
     ...(r.credibilityIssues.length
-      ? r.credibilityIssues.slice(0, 7).map((c) => `- ${c.issueType}: ${c.problem}`)
+      ? r.credibilityIssues.slice(0, 7).map((c) => `- ${c.issueType}: ${c.whyFlagged}`)
       : ["- None flagged"]),
   ];
 }
@@ -33,8 +46,8 @@ export function buildReportText(result: AnalysisResult): string {
   const lines = careerLines(result.careerReport);
   if (result.jobMatch) {
     lines.push(
-      ``,
-      `## Job match`,
+      "",
+      "## Job match",
       `- Readiness: ${result.jobMatch.readinessScore ?? "N/A"}/100`,
       result.jobMatch.summary ?? "",
     );

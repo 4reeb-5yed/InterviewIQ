@@ -26,13 +26,17 @@ export function CredibilityFlags({ issues }: { issues: CredibilityIssue[] }) {
           <blockquote className="mt-2 border-l-4 border-amber-300 bg-amber-50 px-3 py-2 text-sm italic text-slate-700 dark:bg-amber-950/30 dark:text-slate-200">
             “{issue.flaggedText}”
           </blockquote>
-          <p className="mt-2 text-sm font-normal text-slate-600 dark:text-slate-300">
-            <span className="font-semibold text-red-700 dark:text-red-400">Problem: </span>
-            {issue.problem}
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+            <span className="font-semibold text-red-700 dark:text-red-400">Why flagged: </span>
+            {issue.whyFlagged}
           </p>
-          <p className="mt-1 text-sm font-normal text-slate-600 dark:text-slate-300">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+            <span className="font-semibold">Evidence issue: </span>
+            {issue.evidenceIssue}
+          </p>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             <span className="font-semibold text-green-700 dark:text-green-400">Fix: </span>
-            {issue.fix}
+            {issue.suggestedImprovement}
           </p>
         </div>
       ))}

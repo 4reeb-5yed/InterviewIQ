@@ -63,21 +63,25 @@ export interface InterviewQuestion {
   likelihoodScore: number;
 }
 
-// --- Career Intelligence Report (resume-only, evidence-driven) ---------------
+// --- Career Intelligence Report (recruiter / ATS / hiring-manager audit) -----
 
+export type Confidence = "high" | "medium" | "low";
 export type DimensionStatus = "ok" | "insufficient_data";
 
 export interface ScoredDimension {
   status: DimensionStatus;
   score: number | null;
+  confidence: Confidence;
   reasoning: string;
   evidenceFound: string[];
   evidenceMissing: string[];
   reason?: string | null;
 }
 
-export interface CareerLevelAssessment extends ScoredDimension {
-  level: string;
+export interface CandidateContext {
+  stage: "student" | "early_career" | "mid" | "senior" | "unknown";
+  reasoning: string;
+  evidence: string[];
 }
 
 export type AtsFieldStatus = "pass" | "fail" | "at_risk";
@@ -88,24 +92,110 @@ export interface AtsField {
   reason: string;
 }
 
-export interface AtsSimulation {
+export interface AtsAnalysis {
+  score: number | null;
+  confidence: Confidence;
+  reasoning: string;
+  evidence: string[];
   fields: AtsField[];
-  parsingRisks: string[];
+  blockers: string[];
+  warnings: string[];
+  strengths: string[];
+  recommendations: string[];
+  interpretation: string;
+}
+
+export interface SectionReview {
+  section: string;
+  status: "present" | "missing";
+  score: number | null;
+  confidence: Confidence;
+  strengths: string[];
+  weaknesses: string[];
+  missingElements: string[];
+  evidence: string[];
+  recommendations: string[];
+}
+
+export type ProjectCategory =
+  | "Learning"
+  | "Academic"
+  | "Personal"
+  | "Portfolio"
+  | "Open Source"
+  | "Freelance"
+  | "Startup"
+  | "Commercial"
+  | "Enterprise"
+  | "Unknown";
+
+export interface ProjectAssessment {
+  name: string;
+  category: ProjectCategory;
+  categoryConfidence: Confidence;
+  engineeringImpact: string;
+  engineeringSignals: string[];
+  businessImpact: string | null;
+  strengths: string[];
+  weaknesses: string[];
+  missingEvidence: string[];
+  score: number | null;
+  confidence: Confidence;
+}
+
+export interface TenSecondScan {
+  firstImpression: string;
+  mostNoticeableStrength: string;
+  mostNoticeableWeakness: string;
+  keepsReadingProbability: number;
+  confidence: Confidence;
+}
+
+export interface ThirtySecondScan {
+  whatRecruiterLearns: string[];
+  concerns: string[];
+  positiveSignals: string[];
+}
+
+export interface FullReview {
+  overallAssessment: string;
+  hireability: string;
+  risks: string[];
+  strongPoints: string[];
+}
+
+export type Verdict = "Strong Shortlist" | "Shortlist" | "Maybe" | "Weak Maybe" | "Reject";
+
+export interface RecruiterSimulation {
+  tenSecond: TenSecondScan;
+  thirtySecond: ThirtySecondScan;
+  fullReview: FullReview;
+  verdict: Verdict;
+  verdictReasoning: string;
+  confidence: Confidence;
 }
 
 export interface RoleFit {
   role: string;
+  tier: "realistic" | "stretch" | "unlikely";
   fitScore: number;
-  tier: "realistic" | "stretch";
+  confidence: Confidence;
+  whyFits: string[];
+  whyNot: string[];
+}
+
+export interface MarketPositioning {
+  currentLevel: string;
   reasoning: string;
-  fitDrivers: string[];
-  fitBlockers: string[];
+  roles: RoleFit[];
 }
 
 export interface Gap {
   gap: string;
-  whyItMatters: string;
+  whyEmployersCare: string;
+  howEvaluated: string;
   howToAcquire: string;
+  expectedImpact: string;
 }
 
 export interface GapAnalysis {
@@ -114,44 +204,49 @@ export interface GapAnalysis {
   gaps: Gap[];
 }
 
-export type CredibilityIssueType =
-  | "Skills Without Evidence"
-  | "Unproven Claim"
-  | "Weak Project"
-  | "Buzzword"
-  | "Missing Metric";
-
 export interface CredibilityIssue {
-  issueType: CredibilityIssueType;
+  issueType: string;
   flaggedText: string;
-  problem: string;
-  fix: string;
+  whyFlagged: string;
+  evidenceIssue: string;
+  suggestedImprovement: string;
+}
+
+export interface CareerProjection {
+  employability: ScoredDimension;
+  internshipProbability: ScoredDimension;
+  entryLevelProbability: ScoredDimension;
+  interviewProbability: ScoredDimension;
+  startupSuitability: ScoredDimension;
+  enterpriseSuitability: ScoredDimension;
 }
 
 export interface ROIImprovement {
   priority: "high" | "medium" | "low";
   change: string;
-  reason: string;
-  expectedImpact: string;
+  whyItMatters: string;
+  expectedBenefit: string;
   before: string;
   after: string;
+  estimatedImpact: string;
 }
 
 export interface Strength {
   strength: string;
   evidence: string;
+  confidence: Confidence;
 }
 
 export interface CareerReport {
-  atsReadiness: ScoredDimension;
-  resumeQuality: ScoredDimension;
-  employability: ScoredDimension;
-  interviewProbability: ScoredDimension;
-  careerLevel: CareerLevelAssessment;
-  atsSimulation: AtsSimulation;
-  marketFit: RoleFit[];
+  candidateContext: CandidateContext;
+  ats: AtsAnalysis;
+  sectionReviews: SectionReview[];
+  projectAssessments: ProjectAssessment[];
+  recruiterSimulation: RecruiterSimulation;
+  marketPositioning: MarketPositioning;
   gapAnalysis: GapAnalysis;
   credibilityIssues: CredibilityIssue[];
+  careerProjection: CareerProjection;
   roiImprovements: ROIImprovement[];
   strengths: Strength[];
   overallSummary: string;

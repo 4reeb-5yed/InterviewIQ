@@ -1,5 +1,6 @@
-import { Card, CardBody } from "../../../components/ui/card";
+import { ConfidenceTag } from "../../../components/shared/ConfidenceTag";
 import { StatusPill, type PillTone } from "../../../components/shared/StatusPill";
+import { Card, CardBody } from "../../../components/ui/card";
 import { Check, Flag } from "../../../components/ui/icons";
 import type { ScoredDimension } from "../../../types/analysis.types";
 
@@ -23,6 +24,7 @@ function label(score: number, strict: boolean): string {
 export function ScoreCard({ title, dimension, kind = "standard" }: ScoreCardProps) {
   const strict = kind === "strict";
   const insufficient = dimension.status === "insufficient_data" || dimension.score === null;
+  const score = dimension.score as number;
 
   return (
     <Card>
@@ -30,15 +32,19 @@ export function ScoreCard({ title, dimension, kind = "standard" }: ScoreCardProp
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
           {insufficient ? (
-            <StatusPill label="not enough data" tone="slate" />
+            <StatusPill label="insufficient evidence" tone="slate" />
           ) : (
             <div className="flex items-center gap-2">
-              <StatusPill label={label(dimension.score as number, strict)} tone={tone(dimension.score as number, strict)} />
+              <StatusPill label={label(score, strict)} tone={tone(score, strict)} />
               <span className="text-3xl font-semibold leading-none text-slate-900 dark:text-slate-100">
                 {dimension.score}
               </span>
             </div>
           )}
+        </div>
+
+        <div className="mt-2">
+          <ConfidenceTag value={dimension.confidence} />
         </div>
 
         <p className="mt-3 text-sm font-normal text-slate-600 dark:text-slate-300">

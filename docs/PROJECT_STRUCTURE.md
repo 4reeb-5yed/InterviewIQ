@@ -47,7 +47,7 @@ InterviewIQ/
 │   │   │   ├── career_agent.py        # Career Intelligence (always runs; evidence-driven)
 │   │   │   ├── resume_agent.py  job_agent.py  skill_gap_agent.py  question_agent.py
 │   │   ├── prompts/
-│   │   │   ├── career_prompt.py       # rigorous, anti-inflation, evidence-required
+│   │   │   ├── career_prompt.py       # recruiter+ATS+hiring-manager audit; evidence+confidence; anti-inflation
 │   │   │   └── resume_prompt.py  job_prompt.py  skill_gap_prompt.py  question_gen_prompt.py
 │   │   ├── features/                  # router → controller → service → repository
 │   │   │   ├── resume/                # POST /upload/resume
@@ -60,8 +60,10 @@ InterviewIQ/
 │   │   ├── schemas/
 │   │   │   ├── api.py                 # ApiResponse[T], ApiError
 │   │   │   └── domain.py              # ResumeData, JobData, SkillGap, InterviewQuestion,
-│   │   │                              #   ScoredDimension, CareerLevelAssessment, ATSSimulation,
-│   │   │                              #   RoleFit, GapAnalysis, CredibilityIssue, ROIImprovement,
+│   │   │                              #   ScoredDimension(+confidence), CandidateContext,
+│   │   │                              #   ATSAnalysis, SectionReview, ProjectAssessment,
+│   │   │                              #   RecruiterSimulation, MarketPositioning, GapAnalysis,
+│   │   │                              #   CredibilityIssue, CareerProjection, ROIImprovement,
 │   │   │                              #   Strength, CareerReport, JobMatch
 │   │   └── utils/                     # logger (structlog) · response · pdf_parser
 │   ├── migrations/versions/
@@ -94,8 +96,10 @@ InterviewIQ/
             └── analysis/
                 ├── AnalysisPage.tsx           # report: sticky summary bar + collapsible sections + export
                 ├── hooks/useAnalysis.ts       # submit→poll
-                └── components/                # SummaryBar, ScoreCard, AtsSimulation, CredibilityFlags,
-                                               #   MarketFit, GapAnalysisView, RoiImprovements,
+                └── components/                # SummaryBar, RecruiterSimulation, CareerProjection,
+                                               #   ScoreCard, AtsAnalysis, SectionReviews,
+                                               #   ProjectAssessments, MarketPositioning,
+                                               #   GapAnalysisView, CredibilityFlags, RoiImprovements,
                                                #   ReadinessGauge, SkillGapCard, QuestionTable,
                                                #   ReportSkeleton, LoadingStages
 ```
@@ -125,6 +129,6 @@ client → POST /api/v1/analysis/run { resumeId, jobId? } → 202 { taskId }
 ## Current capabilities (beyond the original Phase 1)
 
 - **Optional Job Description** — resume-only runs produce a full Career Intelligence Report; adding a job layers in the Job Match analysis. One pipeline, conditional graph.
-- **Evidence-driven report** — every score carries `reasoning`, `evidenceFound`, `evidenceMissing`; ATS field-by-field simulation; market fit with drivers/blockers; credibility flags; before→after ROI; `insufficient_data` instead of guessing.
+- **Evidence-driven report** — a combined recruiter + ATS + hiring-manager audit: candidate-stage detection, recruiter simulation (10s/30s/full + verdict), career projection probabilities, true ATS analysis, section-by-section review, project assessment (judged by category; engineering vs business impact), realistic/stretch/unlikely positioning, employer-grade gaps, credibility flags, and before→after ROI. Every conclusion carries reasoning, evidence found/missing, and a **confidence** level; `insufficient_data` instead of guessing; strict anti-inflation scoring; no fabricated metrics.
 - **Provider-agnostic AI** — Anthropic, OpenAI, Gemini, AWS Bedrock, and any OpenAI-compatible/local endpoint (OpenRouter, Ollama, vLLM), selected purely by env (see [AI_PROVIDERS.md](AI_PROVIDERS.md)).
 - **UI/UX** — landing/upload/report screens, dark mode, mobile bottom-nav, accessible states, skeleton + progressive loading, collapsible sections, and report export (copy / Save-as-PDF / share).

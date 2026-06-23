@@ -15,13 +15,21 @@ export function GapAnalysisView({ data }: { data: GapAnalysis }) {
         {data.gaps.map((gap, i) => (
           <div key={i} className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{gap.gap}</p>
-            <p className="mt-2 text-sm font-normal text-slate-600 dark:text-slate-300">
-              <span className="font-semibold">Why it matters: </span>
-              {gap.whyItMatters}
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              <span className="font-semibold">Why employers care: </span>
+              {gap.whyEmployersCare}
             </p>
-            <p className="mt-1 text-sm font-normal text-indigo-700 dark:text-indigo-300">
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <span className="font-semibold">How it’s evaluated: </span>
+              {gap.howEvaluated}
+            </p>
+            <p className="mt-1 text-sm text-indigo-700 dark:text-indigo-300">
               <span className="font-semibold">How to acquire: </span>
               {gap.howToAcquire}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              <span className="font-semibold">Expected impact: </span>
+              {gap.expectedImpact}
             </p>
           </div>
         ))}

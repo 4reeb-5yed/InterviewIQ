@@ -51,11 +51,11 @@ class Settings(BaseSettings):
     aws_secret_access_key: str | None = None
 
     # --- Per-agent model identifiers (no hardcoding in business logic) -------
-    resume_agent_model: str = "claude-3-5-sonnet-latest"
-    job_agent_model: str = "claude-3-5-sonnet-latest"
-    career_agent_model: str = "claude-3-5-sonnet-latest"
-    skill_gap_agent_model: str = "claude-3-5-sonnet-latest"
-    question_agent_model: str = "claude-3-5-sonnet-latest"
+    resume_agent_model: str = "gemini-3.1-flash-lite"
+    job_agent_model: str = "gemini-3.1-flash-lite"
+    career_agent_model: str = "gemini-3.1-flash-lite"
+    skill_gap_agent_model: str = "gemini-3.1-flash-lite"
+    question_agent_model: str = "gemini-3.1-flash-lite"
 
     # --- Database -------------------------------------------------------------
     database_url: str = (

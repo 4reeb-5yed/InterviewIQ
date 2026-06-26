@@ -1,6 +1,6 @@
 # InterviewIQ — API Contracts
 
-> All routes prefixed `/api/v1`. Every response is wrapped in a uniform envelope. Phase 1 endpoints are fully specified; Phase 2+ endpoints are listed at the end as a forward reference only.
+> All routes prefixed `/api/v1`. Every response is wrapped in a uniform envelope. A Job Description is **optional**: résumé-only runs return a Career Intelligence report, and adding a job layers in a job-match. Endpoints under "Forward reference" are not implemented yet.
 
 ---
 
@@ -110,9 +110,13 @@ or
 
 ### POST `/api/v1/analysis/run`  — async (submit)
 
-Start the LangGraph analysis pipeline for a resume+job pair.
+Start the LangGraph analysis pipeline. `jobId` is **optional**: omit it for a résumé-only Career Intelligence report; include it to also run the job-match.
 
-- Request:
+- Request (résumé only):
+```json
+{ "resumeId": "uuid" }
+```
+- Request (with job match):
 ```json
 { "resumeId": "uuid", "jobId": "uuid" }
 ```
@@ -120,7 +124,7 @@ Start the LangGraph analysis pipeline for a resume+job pair.
 ```json
 { "success": true, "data": { "taskId": "uuid" } }
 ```
-- Behavior: checks cache for an existing analysis of the same pair; if present, the task completes near-instantly with the cached result.
+- Behavior: checks cache for an existing analysis of the same `(resumeId, jobId|none)`; if present, the task completes near-instantly with the cached result.
 - Errors: `NOT_FOUND` (unknown resumeId/jobId), `VALIDATION_ERROR`.
 
 ---
@@ -133,7 +137,7 @@ Poll background-task status. Frontend polls every ~2s until terminal.
 ```json
 { "success": true, "data": { "taskId": "uuid", "status": "running", "result": null } }
 ```
-- Response `200` (completed):
+- Response `200` (completed): `result` is the analysis payload —
 ```json
 {
   "success": true,
@@ -142,17 +146,37 @@ Poll background-task status. Frontend polls every ~2s until terminal.
     "status": "completed",
     "result": {
       "analysisId": "uuid",
-      "readinessScore": 72,
-      "skillGaps": [
-        { "skill": "PostgreSQL", "status": "partial", "importance": "critical", "confidenceScore": 0.6 }
-      ],
-      "predictedQuestions": [
-        { "id": "uuid", "text": "Explain DB indexing.", "type": "technical",
-          "difficulty": "medium", "topic": "databases", "likelihoodScore": 0.81 }
-      ],
-      "summary": "Strong Python foundation; close gaps in SQL and system design."
+      "mode": "resume_only",
+      "careerReport": {
+        "candidateContext": { "stage": "early_career", "reasoning": "...", "evidence": ["..."] },
+        "ats": { "score": 68, "confidence": "medium", "fields": [], "blockers": [], "warnings": [],
+                 "strengths": [], "recommendations": [], "interpretation": "...", "reasoning": "...", "evidence": [] },
+        "sectionReviews": [], "projectAssessments": [],
+        "recruiterSimulation": { "verdict": "Maybe", "verdictReasoning": "...", "confidence": "medium",
+                                 "tenSecond": {}, "thirtySecond": {}, "fullReview": {} },
+        "marketPositioning": { "currentLevel": "Junior", "reasoning": "...", "roles": [] },
+        "gapAnalysis": { "currentLevel": "...", "targetLevel": "...", "gaps": [] },
+        "credibilityIssues": [],
+        "careerProjection": {
+          "employability": { "status": "ok", "score": 60, "confidence": "medium",
+            "reasoning": "...", "evidenceFound": ["..."], "evidenceMissing": ["..."] }
+          /* internshipProbability, entryLevelProbability, interviewProbability,
+             startupSuitability, enterpriseSuitability — same SCORED shape */
+        },
+        "roiImprovements": [], "strengths": [], "overallSummary": "..."
+      },
+      "jobMatch": null
     }
   }
+}
+```
+When `mode` is `"job_match"`, `jobMatch` is populated:
+```json
+"jobMatch": {
+  "readinessScore": 72,
+  "summary": "...",
+  "skillGaps": [{ "skill": "PostgreSQL", "status": "partial", "importance": "critical", "confidenceScore": 0.6 }],
+  "predictedQuestions": [{ "id": "uuid", "text": "...", "type": "technical", "difficulty": "medium", "topic": "databases", "likelihoodScore": 0.81 }]
 }
 ```
 - Response `200` (failed):
@@ -168,8 +192,10 @@ Poll background-task status. Frontend polls every ~2s until terminal.
 
 Fetch a previously computed analysis (e.g. on page refresh / shareable link).
 
-- Response `200`: same `result` shape as the completed task above (minus the task wrapper), plus `resumeId`, `jobId`, `createdAt`.
+- Response `200`: the same `result` payload as the completed task (`analysisId`, `mode`, `careerReport`, `jobMatch`) plus `resumeId`, `jobId` (nullable), `createdAt`.
 - Errors: `NOT_FOUND`.
+
+> The full `careerReport` schema (every nested field) is defined in `server/app/schemas/domain.py` (`CareerReport`) and mirrored in `client/src/types/analysis.types.ts`.
 
 ---
 

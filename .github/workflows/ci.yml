@@ -1,5 +1,5 @@
 # CI: lint + type-check + test for backend and frontend.
-# Stub per Phase 1 (docs/PHASE_1_PLAN.md 12.3); make it a required check in Phase 4.
+# Runs on push to main and on pull requests.
 name: CI
 
 on:

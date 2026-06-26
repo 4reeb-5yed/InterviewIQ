@@ -20,7 +20,7 @@
 - `uv` — fast Python dependency management (alternative to pip/venv).
 - `make` — if you add a `Makefile` later.
 
-**API keys:** an **Anthropic API key** (`AI_API_KEY`). The backend builds and tests without it (mock provider), but a live analysis needs it.
+**API keys:** an AI provider key (`AI_API_KEY`). The default provider is **Anthropic**; you can use OpenAI, Gemini, AWS Bedrock, or a **local/OpenAI-compatible** model instead — see [AI_PROVIDERS.md](AI_PROVIDERS.md). The backend **validates the selected provider's credentials at startup and refuses to boot without them** (tests use a fake provider, so `pytest` runs without a key).
 
 ---
 
@@ -65,15 +65,18 @@ PORT=8000
 ENVIRONMENT=development
 ALLOWED_ORIGINS=http://localhost:5173
 
-# AI provider (provider-agnostic; default Anthropic)
-AI_PROVIDER=anthropic
-AI_API_KEY=sk-ant-your-key-here
+# AI provider (provider-agnostic) — production uses Gemini; default per-agent
+# models below are gemini-3.1-flash-lite. Other providers (anthropic | openai |
+# bedrock | local) — see docs/AI_PROVIDERS.md. Set AI_PROVIDER + AI_API_KEY to match.
+AI_PROVIDER=gemini
+AI_API_KEY=your-provider-key
 
-# Per-agent models (no hardcoding in code)
-RESUME_AGENT_MODEL=claude-3-5-sonnet-latest
-JOB_AGENT_MODEL=claude-3-5-sonnet-latest
-SKILL_GAP_AGENT_MODEL=claude-3-5-sonnet-latest
-QUESTION_AGENT_MODEL=claude-3-5-sonnet-latest
+# Per-agent models (must match the selected provider)
+RESUME_AGENT_MODEL=gemini-3.1-flash-lite
+JOB_AGENT_MODEL=gemini-3.1-flash-lite
+CAREER_AGENT_MODEL=gemini-3.1-flash-lite
+SKILL_GAP_AGENT_MODEL=gemini-3.1-flash-lite
+QUESTION_AGENT_MODEL=gemini-3.1-flash-lite
 
 # Database (local docker Postgres)
 DATABASE_URL=postgresql+asyncpg://interviewiq:interviewiq@localhost:5432/interviewiq
@@ -85,10 +88,13 @@ MAX_FILE_SIZE_MB=5
 RATE_LIMIT_WINDOW_SECONDS=60
 RATE_LIMIT_MAX_REQUESTS=30
 
+# Analysis cache TTL (seconds)
+CACHE_ANALYSIS_TTL_SECONDS=86400
+
 # OPTIONAL — leave unset for MVP (enables in-memory cache/tasks)
 # REDIS_URL=redis://localhost:6379/0
 
-# Feature flags (all off for Phase 1)
+# Feature flags (deferred features; all off)
 ENABLE_RAG=false
 ENABLE_MEMORY=false
 ENABLE_COMPANY_INTELLIGENCE=false
@@ -110,10 +116,12 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 
 ### Option A — scripted (recommended)
 ```bash
-git clone <repo-url> InterviewIQ
+git clone https://github.com/4reeb-5yed/InterviewIQ.git
 cd InterviewIQ
-./scripts/setup.sh        # copies .env files, installs deps, runs migrations, prints next steps
+./scripts/setup.sh        # copies .env files, installs backend + frontend deps, prints next steps
 ```
+> `setup.sh` does **not** start services or run migrations — it prepares the workspace. Apply
+> migrations with `alembic upgrade head` (or use Docker Compose, which runs them automatically).
 
 ### Option B — manual
 
@@ -172,8 +180,10 @@ docker compose -f docker/docker-compose.yml up        # postgres + server
 ## 7. Verifying the setup
 
 1. `GET http://localhost:8000/api/v1/health` → `{ "success": true, "data": { "status": "ok" } }`.
-2. Open `http://localhost:5173`, upload a sample PDF resume, paste/enter a job, click **Run Analysis**.
-3. Watch the analysis screen poll, then render readiness score + skill gaps + ranked questions.
+2. Open `http://localhost:5173` → **Analyze**, upload a PDF résumé (a job is **optional**), and click **Analyze résumé**.
+3. The report screen shows a skeleton + progressive status while polling, then renders the Career
+   Intelligence report (recruiter verdict, ATS analysis, market positioning, etc.). If you added a
+   job, a Job Match section (skill gaps + predicted questions) appears too.
 
 ---
 

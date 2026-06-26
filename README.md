@@ -88,11 +88,15 @@ Full detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · actual file tree: [
 
 ## Screenshots
 
-> _Placeholder — add images/GIFs here._
+> These are **placeholder graphics**. Replace the files in [`docs/screenshots/`](docs/screenshots/) with real captures of the [live app](https://interview-iq-areeb-syed.vercel.app) (see that folder's README for how).
 
-| Landing | Upload | Report |
-|---|---|---|
-| _TODO_ | _TODO_ | _TODO_ |
+| Landing (`/`) | Upload (`/analyze`) |
+|:---:|:---:|
+| ![Landing page](docs/screenshots/landing.svg) | ![Upload screen](docs/screenshots/upload.svg) |
+
+| Report — light | Report — dark |
+|:---:|:---:|
+| ![Report light mode](docs/screenshots/report.svg) | ![Report dark mode](docs/screenshots/report-dark.svg) |
 
 ---
 

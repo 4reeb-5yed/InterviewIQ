@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-label="Landing page placeholder">
+  <rect width="1280" height="800" rx="16" fill="#0f172a"/>
+  <rect x="0" y="0" width="1280" height="64" rx="16" fill="#1e293b"/>
+  <rect x="0" y="40" width="1280" height="24" fill="#1e293b"/>
+  <text x="40" y="40" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" fill="#e2e8f0">Interview<tspan fill="#818cf8">IQ</tspan></text>
+  <text x="640" y="360" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="44" font-weight="600" fill="#cbd5e1">Landing</text>
+  <text x="640" y="412" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="22" fill="#94a3b8">Headline · subline · CTA + how-it-works</text>
+  <rect x="540" y="452" width="200" height="48" rx="10" fill="#6366f1"/>
+  <text x="640" y="483" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Analyze my resume</text>
+  <text x="640" y="700" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#475569">Placeholder — replace with docs/screenshots/landing.png</text>
+</svg>

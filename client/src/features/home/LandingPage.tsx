@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { ArrowRight, FileText, Flag, Upload } from "../../components/ui/icons";
+import { AboutSection } from "./components/AboutSection";
 
 const STEPS = [
   { Icon: Upload, title: "Upload your resume", body: "Drop in a PDF. No job description required." },
@@ -50,6 +51,20 @@ export function LandingPage() {
           ))}
         </div>
       </section>
+
+      <AboutSection />
+
+      <footer className="mt-4 border-t border-slate-200 py-6 text-center text-sm font-normal text-slate-400 dark:border-slate-800">
+        © 2026 InterviewIQ · MIT License ·{" "}
+        <a
+          href="https://github.com/4reeb-5yed/InterviewIQ"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded text-slate-500 hover:text-indigo-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-slate-400 dark:hover:text-indigo-400"
+        >
+          GitHub
+        </a>
+      </footer>
     </div>
   );
 }

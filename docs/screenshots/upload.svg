@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-label="Upload page placeholder">
+  <rect width="1280" height="800" rx="16" fill="#f8fafc"/>
+  <rect x="0" y="0" width="1280" height="64" fill="#ffffff"/>
+  <line x1="0" y1="64" x2="1280" y2="64" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="40" y="40" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" fill="#0f172a">Interview<tspan fill="#6366f1">IQ</tspan></text>
+  <text x="40" y="140" font-family="Inter, system-ui, sans-serif" font-size="30" font-weight="600" fill="#0f172a">Analyze your resume</text>
+  <rect x="40" y="190" width="1200" height="220" rx="14" fill="#eef2ff" stroke="#a5b4fc" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="640" y="305" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="22" font-weight="600" fill="#4f46e5">Drag &amp; drop your PDF resume</text>
+  <text x="640" y="338" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#6366f1">or click to browse · PDF up to 5 MB</text>
+  <rect x="40" y="440" width="1200" height="150" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="64" y="480" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="600" fill="#0f172a">Target job · optional</text>
+  <rect x="1040" y="630" width="200" height="48" rx="10" fill="#6366f1"/>
+  <text x="1140" y="661" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="18" font-weight="600" fill="#ffffff">Analyze resume</text>
+  <text x="640" y="760" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="16" fill="#94a3b8">Placeholder — replace with docs/screenshots/upload.png</text>
+</svg>

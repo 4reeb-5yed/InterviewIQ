@@ -19,24 +19,6 @@ const FEATURES = [
   "AI-Powered Reports",
 ];
 
-const TOPICS = [
-  "ai",
-  "artificial-intelligence",
-  "llm",
-  "generative-ai",
-  "career",
-  "resume",
-  "ats",
-  "interview",
-  "fastapi",
-  "react",
-  "typescript",
-  "python",
-  "postgresql",
-  "langgraph",
-  "tailwindcss",
-];
-
 const ROADMAP = [
   "Advanced prompt engineering",
   "Better reasoning quality",
@@ -127,20 +109,6 @@ export function AboutSection() {
             <div className="mt-2 flex flex-wrap gap-2">
               {FEATURES.map((f) => (
                 <Chip key={f}>{f}</Chip>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <SectionTitle>Topics</SectionTitle>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {TOPICS.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                >
-                  #{t}
-                </span>
               ))}
             </div>
           </div>

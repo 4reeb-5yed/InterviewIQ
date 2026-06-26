@@ -4,9 +4,12 @@ import type { ResumeUploadResponse } from "../types/analysis.types";
 export function uploadResume(file: File): Promise<ResumeUploadResponse> {
   const form = new FormData();
   form.append("file", file);
+
   return unwrap<ResumeUploadResponse>(
-    apiClient.post("/api/v1/upload/resume", form, {
-      headers: { "Content-Type": "multipart/form-data" },
+    apiClient.post("/upload/resume", form, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     }),
   );
 }

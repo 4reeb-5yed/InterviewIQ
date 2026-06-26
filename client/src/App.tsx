@@ -8,6 +8,9 @@ import { UploadPage } from "./features/upload/UploadPage";
 const LandingPage = lazy(() =>
   import("./features/home/LandingPage").then((m) => ({ default: m.LandingPage })),
 );
+const AboutPage = lazy(() =>
+  import("./features/about/AboutPage").then((m) => ({ default: m.AboutPage })),
+);
 const AnalysisPage = lazy(() =>
   import("./features/analysis/AnalysisPage").then((m) => ({ default: m.AnalysisPage })),
 );
@@ -28,6 +31,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/analyze" element={<UploadPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/analysis/:taskId" element={<AnalysisPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

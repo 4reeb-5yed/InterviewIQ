@@ -7,7 +7,9 @@
 ## 1. Design notes (MVP)
 
 - **No user/auth tables in Phase 1.** The demo is session-less; rows are anonymous. A `users` table is a Phase 2+ concern.
-- **JSONB for AI outputs.** `skill_gaps` and `predicted_questions` are model-generated lists validated by Pydantic before insert. Storing them as JSONB keeps the schema flat and the pipeline simple. They can be normalized later if querying individual gaps/questions becomes a requirement.
+- **JSONB for AI outputs.** `analyses.career_report` (Career Intelligence report) plus the
+  job-match `skill_gaps` / `predicted_questions` are model-generated structures validated by
+  Pydantic before insert. Storing them as JSONB keeps the schema flat and the pipeline simple.
 - **Task state is NOT in Postgres by default.** Background-task status lives in the in-memory `TaskStore` (or Redis if configured). A `tasks` table is optional and only listed below for the durable variant.
 - **UUID primary keys** everywhere (`uuid4`), generated app-side.
 - **Timestamps** (`created_at`, `updated_at`) on every table, UTC.
@@ -36,11 +38,12 @@
           ├───────────────────────┤
           │ id (PK)               │
           │ resume_id (FK)        │
-          │ job_id (FK)           │
-          │ readiness_score  int  │
-          │ skill_gaps       JSONB│
-          │ predicted_questions JSONB
-          │ summary          text │
+          │ job_id (FK, NULLABLE) │  ← null for résumé-only analyses
+          │ career_report    JSONB│  ← Career Intelligence report
+          │ readiness_score  int  │  ┐
+          │ skill_gaps       JSONB│  ├ job-match columns (null when résumé-only)
+          │ predicted_questions JSONB  │
+          │ summary          text │  ┘
           │ status        varchar │  (pending|running|completed|failed)
           │ error            text │
           │ created_at            │
@@ -80,11 +83,12 @@
 |--------|------|-------------|-------|
 | `id` | UUID | PK | |
 | `resume_id` | UUID | FK → resumes.id, NOT NULL | |
-| `job_id` | UUID | FK → jobs.id, NOT NULL | |
-| `readiness_score` | INTEGER | NULL | 0–100; null until completed |
-| `skill_gaps` | JSONB | NULL | list of `SkillGap` |
-| `predicted_questions` | JSONB | NULL | list of `InterviewQuestion` |
-| `summary` | TEXT | NULL | human-readable summary |
+| `job_id` | UUID | FK → jobs.id, **NULL** | null for résumé-only analyses |
+| `career_report` | JSONB | NULL | Career Intelligence report (matches Pydantic `CareerReport`) |
+| `readiness_score` | INTEGER | NULL | job-match only; 0–100 |
+| `skill_gaps` | JSONB | NULL | job-match only; list of `SkillGap` |
+| `predicted_questions` | JSONB | NULL | job-match only; list of `InterviewQuestion` |
+| `summary` | TEXT | NULL | job-match summary |
 | `status` | VARCHAR(16) | NOT NULL, default 'pending' | pending/running/completed/failed |
 | `error` | TEXT | NULL | populated on failure |
 | `created_at` | TIMESTAMPTZ | NOT NULL, default now() | |
@@ -146,9 +150,12 @@ These mirror the Pydantic domain models (see API_CONTRACTS.md for full field lis
 
 ## 5. Migrations (Alembic)
 
-- One initial migration creates `resumes`, `jobs`, `analyses` (+ indexes).
-- Async engine: use `postgresql+asyncpg://...`; Alembic env configured for async.
-- `DATABASE_URL` comes from env; Neon requires `sslmode=require` (asyncpg: pass via connect args / `?ssl=require`).
-- Naming convention: timestamped revision messages, e.g. `0001_initial_schema`.
+- `0001_initial_schema` — creates `resumes`, `jobs`, `analyses` (+ index on `analyses(resume_id, job_id)`).
+- `0002_optional_job_career_report` — makes `analyses.job_id` **nullable** and adds the
+  `analyses.career_report` JSONB column (enables résumé-only analyses).
+- Async engine: use `postgresql+asyncpg://...`; Alembic env is configured for async.
+- `DATABASE_URL` comes from env; Neon requires SSL (asyncpg: pass `?ssl=require`).
+- Apply with `alembic upgrade head`. **Production must run this once after each deploy** that adds
+  migrations (see [../DEPLOYMENT.md](../DEPLOYMENT.md)).
 
-**Phase 2+ migrations (not now):** `interview_sessions`, `answers`, `roadmaps`, and possibly `users`.
+**Deferred migrations (not present):** `interview_sessions`, `answers`, `roadmaps`, `users`.

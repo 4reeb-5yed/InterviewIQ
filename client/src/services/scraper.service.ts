@@ -9,5 +9,5 @@ export interface JobIngestPayload {
 }
 
 export function ingestJob(payload: JobIngestPayload): Promise<JobIngestResponse> {
-  return unwrap<JobIngestResponse>(apiClient.post("/scrape/job", payload));
+  return unwrap<JobIngestResponse>(apiClient.post("/api/v1/scrape/job", payload));
 }

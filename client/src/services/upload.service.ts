@@ -5,7 +5,7 @@ export function uploadResume(file: File): Promise<ResumeUploadResponse> {
   const form = new FormData();
   form.append("file", file);
   return unwrap<ResumeUploadResponse>(
-    apiClient.post("/upload/resume", form, {
+    apiClient.post("/api/v1/upload/resume", form, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   );

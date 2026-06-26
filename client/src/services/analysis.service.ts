@@ -12,11 +12,11 @@ export interface RunAnalysisInput {
 }
 
 export function runAnalysis(input: RunAnalysisInput): Promise<RunAnalysisResponse> {
-  return unwrap<RunAnalysisResponse>(apiClient.post("/analysis/run", input));
+  return unwrap<RunAnalysisResponse>(apiClient.post("/api/v1/analysis/run", input));
 }
 
 export function getTask(taskId: string): Promise<TaskStatus> {
-  return unwrap<TaskStatus>(apiClient.get(`/tasks/${taskId}`));
+  return unwrap<TaskStatus>(apiClient.get(`/api/v1/tasks/${taskId}`));
 }
 
 export function getAnalysis(analysisId: string): Promise<AnalysisResultResponse> {

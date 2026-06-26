@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 
 import { cn } from "../../lib/cn";
-import { FileText, Home } from "../ui/icons";
+import { FileText, Home, Info } from "../ui/icons";
 
 const TABS = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/analyze", label: "Analyze", Icon: FileText },
+  { to: "/about", label: "About", Icon: Info },
 ];
 
 export function BottomNav() {

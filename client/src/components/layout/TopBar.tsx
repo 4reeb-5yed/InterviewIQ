@@ -7,6 +7,7 @@ import { Moon, Sun } from "../ui/icons";
 const LINKS = [
   { to: "/", label: "Home" },
   { to: "/analyze", label: "Analyze" },
+  { to: "/about", label: "About" },
 ];
 
 function isActive(pathname: string, to: string): boolean {
